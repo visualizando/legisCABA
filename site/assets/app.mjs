@@ -284,9 +284,9 @@ async function init(){
     $('#load-state').hidden=true;$('#app').hidden=false;
     $('#global-filters').addEventListener('submit',e=>e.preventDefault());
     $('#year').addEventListener('change',applyFilters);$('#category').addEventListener('change',applyFilters);
-    $('#reset-filters').addEventListener('click',()=>{$('#year').value='all';$('#category').value='all';$('#active-only').checked=true;$('#project-status').querySelectorAll('input').forEach(input=>input.checked=false);applyFilters();});
+    $('#reset-filters').addEventListener('click',()=>{$('#year').value='all';$('#category').value='all';$('#active-only').checked=true;$('#project-status').querySelectorAll('input').forEach(input=>input.checked=true);applyFilters();});
     $('#person-search').addEventListener('input',debounce(renderPeople));$('#person-sort').querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{$('#person-sort').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));renderPeople();}));$('#active-only').addEventListener('change',applyFilters);$('#person-group').addEventListener('change',renderPeople);
-    $('#project-search').addEventListener('input',debounce(()=>{pagination.all=0;renderAllProjects();}));$('#project-status').addEventListener('change',()=>{pagination.all=0;renderAllProjects();});
+    $('#project-search').addEventListener('input',debounce(()=>{pagination.all=0;renderAllProjects();}));$('#project-status').addEventListener('change',event=>{if(!$('#project-status').querySelector('input:checked'))event.target.checked=true;pagination.all=0;renderAllProjects();});
     ['#profile-role','#profile-session','#profile-sanction','#profile-status'].forEach(id=>$(id).addEventListener('change',()=>{pagination.profile=0;renderProfile();}));
     $('#profile-reset').addEventListener('click',()=>{['#profile-role','#profile-session','#profile-sanction','#profile-status'].forEach(id=>$(id).value='all');pagination.profile=0;renderProfile();});
     $('#edge-min').addEventListener('change',renderNetwork);$('#edge-mode').addEventListener('change',renderNetwork);

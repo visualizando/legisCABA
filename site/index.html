@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
-  <link rel="stylesheet" href="assets/compact.css?v=20261014-casillas">
+  <link rel="stylesheet" href="assets/compact.css?v=20261014-seleccion">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261014-casillas"></script>
+  <script type="module" src="assets/app.mjs?v=20261014-seleccion"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -55,7 +55,7 @@
     </section>
 
     <section id="view-proyectos" class="view" hidden>
-      <div class="section-tools"><label class="search">Buscar proyecto<input id="project-search" type="search" placeholder="Número, tema o nombre del autor" autocomplete="off"></label><fieldset id="project-status" class="project-status-checks"><legend>Recorrido</legend><label><input type="checkbox" value="sanction">Con sanción</label><label><input type="checkbox" value="session">Con registro en sesión</label><label><input type="checkbox" value="no-sanction">Sin sanción registrada</label></fieldset></div><div id="all-projects"></div>
+      <div class="section-tools"><label class="search">Buscar proyecto<input id="project-search" type="search" placeholder="Número, tema o nombre del autor" autocomplete="off"></label><fieldset id="project-status" class="project-status-checks"><legend>Recorrido</legend><label><input type="checkbox" value="sanction" checked>Con sanción</label><label><input type="checkbox" value="session" checked>Con registro en sesión</label><label><input type="checkbox" value="no-sanction" checked>Sin sanción registrada</label></fieldset></div><div id="all-projects"></div>
     </section>
 
     <section id="view-red" class="view" hidden>

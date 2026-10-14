@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
-  <link rel="stylesheet" href="assets/compact.css?v=20261014-ficha-papel">
+  <link rel="stylesheet" href="assets/compact.css?v=20261014-resumen">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261014-ficha-papel"></script>
+  <script type="module" src="assets/app.mjs?v=20261014-resumen"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -40,8 +40,8 @@
       <div class="section-tools" id="people-filters"><label class="search">Buscar legislador<input id="person-search" type="search" placeholder="Apellido, nombre o bloque" autocomplete="off"></label><label>Bloque<select id="person-group"><option value="all">Todos los bloques</option></select></label></div><div id="person-sort" class="sort-controls" role="group" aria-label="Ordenar fichas"><span>Ordenar</span><button type="button" data-sort="author" aria-pressed="true"><span aria-hidden="true">↓</span> Autorías</button><button type="button" data-sort="coauthor" aria-pressed="false"><span aria-hidden="true">↓</span> Coautorías</button><button type="button" data-sort="sanction" aria-pressed="false"><span aria-hidden="true">↓</span> Con sanción</button><button type="button" data-sort="name" aria-pressed="false"><span aria-hidden="true">↕</span> A–Z</button></div><p id="person-count" role="status" class="sr-only"></p><div id="person-cards" class="person-grid"></div>
     </section>
 
-    <section id="view-ficha" class="view" hidden>
-      <a href="#legisladores" class="text-link">← Volver a legisladores</a><div class="profile-heading" id="profile-heading"></div><div id="profile-metrics" class="profile-summary"></div>
+    <a id="profile-back" href="#legisladores" class="text-link" hidden>← Volver a legisladores</a>
+    <section id="view-ficha" class="view" hidden><div class="profile-heading" id="profile-heading"></div><div id="profile-metrics" class="profile-summary"></div>
       <div class="two-charts"><figure><figcaption><h2>Por tipo</h2><p>Autorías y coautorías</p></figcaption><div id="profile-types" class="chart"></div></figure><figure><figcaption><h2>Cofirmantes frecuentes</h2><p>Proyectos compartidos</p></figcaption><div id="profile-partners"></div></figure></div>
       <div class="section-heading"><h2 id="profile-list-heading" tabindex="-1">Proyectos firmados</h2></div>
       <div class="section-tools profile-project-filters">

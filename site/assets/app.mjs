@@ -49,12 +49,12 @@ function profileMetricsChart(s){
   ];
   const target='#profile-metrics',root=$(target);
   root.innerHTML='<h2>Participación en proyectos</h2><div class="profile-role-legend"><span><i class="author-key"></i>Autoría</span><span><i class="coauthor-key"></i>Coautoría</span></div><div class="chart profile-summary-chart"></div><p class="note">Los proyectos con sanción y con registro en sesión pueden coincidir.</p>';
-  const width=Math.max(260,root.clientWidth),left=0,right=48,height=244;
+  const width=Math.max(260,root.clientWidth),left=0,right=48,height=190;
   const x=d3.scaleLinear().domain([0,s.author+s.coauthor||1]).range([left,width-right]);
   const description=rows.map(r=>`${r.label}: ${fmt(r.author+r.coauthor)}; ${fmt(r.author)} autorías y ${fmt(r.coauthor)} coautorías`).join('. ');
   const svg=figureSvg('#profile-metrics .chart',width,height,description).attr('role','group');
   rows.forEach((r,i)=>{
-    const y=28+i*82,total=r.author+r.coauthor;
+    const y=24+i*60,total=r.author+r.coauthor;
     svg.append('text').attr('class','summary-label').attr('x',0).attr('y',y-10).text(r.label);
     let offset=0;
     for(const [key,color] of [['author','#245d78'],['coauthor','#c3d4dc']]){
@@ -68,17 +68,22 @@ function profileMetricsChart(s){
     if(x(r.author)<=28||x(r.coauthor)<=28)svg.append('text').attr('x',0).attr('y',y+48).text(`${fmt(r.author)} autorías · ${fmt(r.coauthor)} coautorías`);
   });
 }
-function profileTypesChart(target,rows){
+function profileTypesChart(target,rows,stats){
   const width=Math.max(260,$(target).clientWidth),x=d3.scaleLinear().domain([0,d3.max(rows,r=>Math.max(r.author,r.coauthor))||1]).range([0,width-38]);
   const svg=figureSvg(target,width,300,rows.map(r=>`${r.label}: ${r.author} autorías y ${r.coauthor} coautorías`).join('. '));
   rows.forEach((r,i)=>{const y=18+i*72;
     svg.append('text').attr('x',0).attr('y',y).style('font-size','12px').style('fill','#202726').text(r.label);
     for(const [key,offset,opacity] of [['author',8,1],['coauthor',29,.3]]){
-      svg.append('rect').attr('x',0).attr('y',y+offset).attr('width',x(r[key])).attr('height',16).attr('fill',r.color).attr('opacity',opacity);
+      const projects=key==='author'?stats.authored:stats.coauthored;
+      const approved=projects.filter(p=>p.categoria===r.id&&p.sancion).length,remaining=r[key]-approved;
+      svg.append('rect').attr('x',0).attr('y',y+offset).attr('width',x(approved)).attr('height',16).attr('fill',r.color).attr('opacity',opacity).append('title').text(`${fmt(approved)} con sanción`);
+      svg.append('rect').attr('x',x(approved)).attr('y',y+offset).attr('width',x(remaining)).attr('height',16).attr('fill',r.color).attr('opacity',opacity*.2).append('title').text(`${fmt(remaining)} sin sanción registrada`);
+      svg.append('line').attr('x1',x(approved)).attr('x2',x(approved)).attr('y1',y+offset).attr('y2',y+offset+16).attr('stroke','#fffdf4');
       svg.append('text').attr('x',x(r[key])+5).attr('y',y+offset+12).text(fmt(r[key]));
     }
   });
   d3.select(target).append('div').attr('class','type-role-legend').html(['Autoría','Coautoría'].map((label,i)=>`<span><span class="type-swatches">${rows.map(r=>`<i style="background:${r.color};opacity:${i?.3:1}"></i>`).join('')}</span>${label}</span>`).join(''));
+  d3.select(target).append('p').attr('class','note').text('Color: con sanción · tenue: sin sanción registrada');
 }
 function categoriesChart(target,rows,profile=false){
   const width=Math.max(260,$(target).clientWidth),height=profile?300:260,left=width<380?126:157,right=42,top=16;
@@ -178,7 +183,7 @@ function renderProfile(){
   $('#profile-heading').innerHTML=`<div class="profile-block-band" style="--group:${group(p).color};color:${p.grupo_visual==='otros'?'#202726':'#fffdf4'}">${esc(p.bloque_referencia)}<span class="card-space">${esc(group(p).nombre)}</span></div>${avatar(p,true)}<div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${p.mandato_actual.desde.slice(0,4)}–${p.mandato_actual.hasta.slice(0,4)}</p>`:''}${blockTimeline(p)}</div><a class="text-link action-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
   portraitFallbacks();
   profileMetricsChart(s);
-  profileTypesChart('#profile-types',s.types);
+  profileTypesChart('#profile-types',s.types,s);
   const collabs=partners(selected,p.id,visiblePeople).slice(0,10);
   $('#profile-partners').innerHTML=collabs.length?collabs.map(c=>`<a class="profile-partner" href="#ficha/${c.id}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></a>`).join(''):'<p class="empty">Sin proyectos compartidos.</p>';
   const status=$('#profile-status'),previous=status.value;
@@ -262,6 +267,7 @@ function renderEdgeTable(){
   $('#edge-table').innerHTML=`<p class="note">100 conexiones más frecuentes.</p><div class="table-scroll"><table><thead><tr><th>Legislador/a</th><th>Legislador/a</th><th>Proyectos en común</th></tr></thead><tbody>${rows.map(e=>`<tr><td>${authorLink(peopleById.get(e.source))}</td><td>${authorLink(peopleById.get(e.target))}</td><td>${fmt(e.value)}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function render(){
+  $('#profile-back').hidden=route!=='ficha';
   $('#page-intro').classList.add('sr-only');
   const copy=viewCopy[route];$('#eyebrow').textContent=copy[0];$('#page-title').innerHTML=copy[1];$('#page-description').textContent=copy[2];$('#page-description').hidden=!copy[2];$('#eyebrow').hidden=!copy[0];
   if(route==='ficha'&&peopleById.has(personId))$('#page-title').textContent=displayName(peopleById.get(personId).nombre);

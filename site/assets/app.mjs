@@ -73,7 +73,7 @@ function profileTypesChart(target,rows,stats){
   const svg=figureSvg(target,width,230,rows.map(r=>`${r.label}: ${r.author} autorías y ${r.coauthor} coautorías`).join('. '));
   rows.forEach((r,i)=>{const y=16+i*54;
     svg.append('text').attr('x',0).attr('y',y).style('font-size','12px').style('fill','#202726').text(r.label);
-    for(const [key,offset,opacity] of [['author',8,1],['coauthor',24,.3]]){
+    for(const [key,offset,opacity] of [['author',8,1],['coauthor',24,1]]){
       const icon=svg.append('g').attr('transform',`translate(2,${y+offset})`).attr('aria-hidden','true').attr('fill','none').attr('stroke','#596461').attr('stroke-width',1.2);
       icon.append('circle').attr('cx',5).attr('cy',3).attr('r',2);icon.append('path').attr('d','M1,12 V10 Q1,6 5,6 Q9,6 9,10 V12');
       if(key==='coauthor'){icon.append('circle').attr('cx',12).attr('cy',3).attr('r',2);icon.append('path').attr('d','M10,6 Q16,6 16,10 V12');}
@@ -85,7 +85,7 @@ function profileTypesChart(target,rows,stats){
       svg.append('text').attr('x',22+x(r[key])+5).attr('y',y+offset+10).text(fmt(r[key]));
     }
   });
-  d3.select(target).append('div').attr('class','type-role-legend').html(['Autoría','Coautoría'].map((label,i)=>`<span><span class="type-swatches">${rows.map(r=>`<i style="background:${r.color};opacity:${i?.3:1}"></i>`).join('')}</span>${label}</span>`).join(''));
+  d3.select(target).append('div').attr('class','type-role-legend').html(['Autoría','Coautoría'].map((label,i)=>`<span><svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="5" cy="3" r="2"/><path d="M1,12 V10 Q1,6 5,6 Q9,6 9,10 V12"/>${i?'<circle cx="12" cy="3" r="2"/><path d="M10,6 Q16,6 16,10 V12"/>':''}</svg>${label}</span>`).join(''));
   d3.select(target).append('p').attr('class','note').text('Color: con sanción · tenue: sin sanción registrada');
 }
 function categoriesChart(target,rows,profile=false){
@@ -188,7 +188,7 @@ function renderProfile(){
   profileMetricsChart(s);
   profileTypesChart('#profile-types',s.types,s);
   const collabs=partners(selected,p.id,visiblePeople).slice(0,5);
-  $('#profile-partners').innerHTML=collabs.length?collabs.map(c=>`<a class="profile-partner" href="#ficha/${c.id}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></a>`).join(''):'<p class="empty">Sin proyectos compartidos.</p>';
+  $('#profile-partners').innerHTML=collabs.length?collabs.map(c=>`<a class="profile-partner" style="--shared-width:${100*c.value/collabs[0].value}%" href="#ficha/${c.id}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></a>`).join(''):'<p class="empty">Sin proyectos compartidos.</p>';
   const status=$('#profile-status'),previous=status.value;
   status.innerHTML='<option value="all">Todos los estados</option>'+[...new Set(s.signed.map(p=>p.estado))].sort().map(value=>`<option value="${esc(value)}">${esc(value.toLocaleLowerCase('es-AR'))}</option>`).join('');
   status.value=[...status.options].some(o=>o.value===previous)?previous:'all';

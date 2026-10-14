@@ -56,3 +56,5 @@
 #profile-back{margin-bottom:14px}#view-ficha .profile-heading{grid-template-columns:auto minmax(0,1fr)}#view-ficha .profile-heading>.action-link{grid-column:2;justify-self:end;align-self:end}#view-ficha .profile-heading{margin-top:-16px}.profile-block-band{margin-top:0}#view-ficha .two-charts{grid-template-columns:1fr;gap:20px}#view-ficha .two-charts figure{padding:16px}.profile-summary{padding-block:16px}.profile-summary h2{margin-bottom:8px}.profile-role-legend{margin-bottom:12px}.type-role-legend+.note{font-size:11px;margin-top:8px}
 
 #profile-partners .profile-partner{padding-block:8px;font-size:12px}#profile-partners .profile-partner>span:first-child{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}#profile-partners .partner-political{display:inline;margin:0}#view-ficha .two-charts figcaption{margin-bottom:14px}
+
+#profile-partners .profile-partner{position:relative;border-bottom:0;padding-bottom:12px;margin-bottom:4px}#profile-partners .profile-partner::after{content:"";position:absolute;bottom:0;left:0;width:var(--shared-width);height:4px;background:#285f73;border-radius:2px}

@@ -145,24 +145,35 @@ def main():
             'bloque_referencia':block,'bloque_referencia_nota':block_note,'grupo':group,'bloques_historia':history,
             'url':BASE+'pages/legislador.aspx?id='+pid})
     counts=Counter(a['bloque'] for a in current.values())
-    visual_groups=[{**b,'bancas':counts[b['nombre']]} for b in official_blocks.values() if counts[b['nombre']]>1]
-    visual_groups.sort(key=lambda b:-b['bancas'])
-    visual_groups.append({'id':'otros','nombre':'Otros','color':'#727a77','bancas':sum(n for n in counts.values() if n==1)})
-    prominent={b['id'] for b in visual_groups if b['id']!='otros'}
-    peronist_blocks={'Unión por la Patria','Fuerza por Buenos Aires'}
-    reference=official_blocks.get('Fuerza por Buenos Aires') or official_blocks.get('Unión por la Patria')
-    if reference:
-        visual_groups=[b for b in visual_groups if b['nombre'] not in peronist_blocks]
-        visual_groups.insert(0,{'id':'peronismo','nombre':'Peronismo','color':reference['color'],
-            'bancas':sum(counts[b] for b in peronist_blocks),'agrupacion':True})
+    visual_groups=[
+        {'id':'peronismo','nombre':'Peronismo','color':'#34aad7'},
+        {'id':'pro-aliados','nombre':'Pro y aliados','color':'#efb118'},
+        {'id':'libertarios','nombre':'Libertarios','color':'#c367b3'},
+        {'id':'ucr','nombre':'UCR','color':'#e86952'},
+        {'id':'izquierda','nombre':'Izquierda','color':'#cb1f00'},
+        {'id':'otros','nombre':'Otros','color':'#b3b3b3'},
+    ]
+    visual_blocks={
+        'Fuerza por Buenos Aires':'peronismo','Unión por la Patria':'peronismo','Frente de Todos':'peronismo',
+        'Vamos por más':'pro-aliados','Vamos Juntos':'pro-aliados','Confianza y Desarrollo':'pro-aliados',
+        'Confianza Publica':'pro-aliados','Volver al Futuro':'pro-aliados',
+        'La Libertad avanza':'libertarios','La Libertad Avanza':'libertarios',
+        'Republicanos Unidos':'libertarios','Bloque República':'libertarios',
+        'Ciudadanos Unidos / UCR':'ucr','UCR / Evolución':'ucr','UCR-Evolución':'ucr',
+        'Frente de Izquierda de los Trabajadores / PO':'izquierda',
+        'PTS Frente de Izq-Unidad':'izquierda','MST/Frente de Izquierda/Unidad':'izquierda',
+        'Izquierda Socialista-Frente de Izquierda-Unidad':'izquierda',
+    }
     for person in people:
-        person['grupo_visual']='peronismo' if reference and person['bloque_referencia'] in peronist_blocks else person['grupo'] if person['grupo'] in prominent else 'otros' if person['activo'] else 'historicos'
-    visual_groups.append({'id':'historicos','nombre':'Bloques históricos sin color publicado','color':'#a6adaa','bancas':0})
+        person['grupo_visual']=visual_blocks.get(person['bloque_referencia'],'otros')
+    for visual in visual_groups:
+        visual['bancas']=sum(p['activo'] and p['grupo_visual']==visual['id'] for p in people)
+        visual['agrupacion']=True
     output={'actualizado':data['actualizado'],'enriquecido':datetime.now(timezone.utc).isoformat(),'desde':data['desde'],'hasta':data['hasta'],
         'sesiones_consultadas':len(sessions),'legisladores':people,'proyectos':projects,
         'grupos':sorted(groups.values(),key=lambda b:(not b['vigente'],b['nombre'])),
         'grupos_fuente':COMPOSITION_SOURCE,
-        'grupos_visuales':visual_groups,
+        'grupos_visuales':visual_groups,'bloques_por_espacio':visual_blocks,
         'composicion_actual':{'fuente':'https://www.legislatura.gob.ar/seccion/composicion-actual.html',
             'servicio':BASE+'webservices/Json.asmx/GetDiputadosActivosNuevo','total':len(current),
             'consultada':datetime.fromtimestamp((CACHE/'active.xml').stat().st_mtime,timezone.utc).isoformat(),

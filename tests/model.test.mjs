@@ -44,6 +44,7 @@ test('La exportación real conserva identidades, fechas y el expediente de contr
   const casielles=data.legisladores.find(p=>p.bloque_actual==='Transformación');
   assert.equal(casielles.grupo_visual,'otros');
   assert.notEqual(casielles.grupo,'otros');
-  assert.ok(data.grupos_visuales.filter(g=>!['otros','historicos'].includes(g.id)).every(g=>g.bancas>1));
+  assert.deepEqual(data.grupos_visuales.map(g=>g.color),['#34aad7','#efb118','#c367b3','#e86952','#cb1f00','#b3b3b3']);
+  assert.deepEqual(data.grupos_visuales.map(g=>g.nombre),['Peronismo','Pro y aliados','Libertarios','UCR','Izquierda','Otros']);
   assert.ok(data.legisladores.filter(p=>['Unión por la Patria','Fuerza por Buenos Aires'].includes(p.bloque_referencia)).every(p=>p.grupo_visual==='peronismo'));
 });

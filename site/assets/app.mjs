@@ -90,7 +90,7 @@ function renderOverview(){
 function renderPeople(){
   const term=normalize($('#person-search').value),order=$('#person-sort').value;
   const filterGroup=$('#person-group').value;
-  const people=visiblePeople.filter(p=>normalize(p.nombre+' '+p.bloque_referencia+' '+group(p).nombre).includes(term)&&(filterGroup==='all'||p.grupo===filterGroup||filterGroup==='visual:peronismo'&&p.grupo_visual==='peronismo'));
+  const people=visiblePeople.filter(p=>normalize(p.nombre+' '+p.bloque_referencia+' '+group(p).nombre).includes(term)&&(filterGroup==='all'||p.grupo===filterGroup||filterGroup.startsWith('visual:')&&p.grupo_visual===filterGroup.slice(7)));
   groupLegend('#people-group-legend');
   people.sort((a,b)=>order==='name'?a.nombre.localeCompare(b.nombre,'es'):stats.get(b.id)[order]-stats.get(a.id)[order]||a.nombre.localeCompare(b.nombre,'es'));
   $('#person-count').textContent=`${fmt(people.length)} legisladores`;
@@ -207,7 +207,7 @@ async function init(){
     peopleById=new Map(dataset.legisladores.map(p=>[p.id,p]));
     const composition=dataset.composicion_actual||{total:dataset.legisladores.filter(p=>p.activo).length,consultada:dataset.enriquecido,fuente:'https://www.legislatura.gob.ar/seccion/composicion-actual.html'};
     $('#current-composition-note').innerHTML=`${fmt(composition.total)} en la composición actual · ${new Date(composition.consultada).toLocaleDateString('es-AR')}. <a href="${esc(composition.fuente)}" target="_blank" rel="noopener">Fuente oficial ↗</a>`;
-    $('#person-group').insertAdjacentHTML('beforeend','<option value="visual:peronismo">Peronismo</option>'+dataset.grupos.filter(g=>!['Unión por la Patria','Fuerza por Buenos Aires'].includes(g.nombre)).map(g=>`<option value="${g.id}">${esc(g.nombre)}</option>`).join(''));
+    $('#person-group').insertAdjacentHTML('beforeend',dataset.grupos_visuales.map(g=>`<option value="visual:${g.id}">${esc(g.nombre)}</option>`).join('')+'<optgroup label="Bloques oficiales">'+dataset.grupos.map(g=>`<option value="${g.id}">${esc(g.nombre)}</option>`).join('')+'</optgroup>');
     $('#group-mapping').innerHTML=`<details><summary>Ver nombres y colores oficiales</summary><div class="table-scroll"><table><thead><tr><th>Bloque de referencia</th><th>Identificación y color</th></tr></thead><tbody>${[...new Set(dataset.legisladores.map(p=>p.bloque_referencia))].sort().map(b=>{const p=dataset.legisladores.find(p=>p.bloque_referencia===b);return `<tr><td>${esc(b||'No disponible')}</td><td>${groupBadge(p)}</td></tr>`;}).join('')}</tbody></table></div></details>`;
     const years=[...new Set(dataset.proyectos.map(p=>p.fecha.slice(0,4)))].sort().reverse();
     $('#year').insertAdjacentHTML('beforeend',years.map(y=>`<option value="${y}">${y}</option>`).join(''));

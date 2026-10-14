@@ -69,17 +69,20 @@ function profileMetricsChart(s){
   });
 }
 function profileTypesChart(target,rows,stats){
-  const width=Math.max(260,$(target).clientWidth),x=d3.scaleLinear().domain([0,d3.max(rows,r=>Math.max(r.author,r.coauthor))||1]).range([0,width-38]);
-  const svg=figureSvg(target,width,300,rows.map(r=>`${r.label}: ${r.author} autorías y ${r.coauthor} coautorías`).join('. '));
-  rows.forEach((r,i)=>{const y=18+i*72;
+  const width=Math.max(260,$(target).clientWidth),x=d3.scaleLinear().domain([0,d3.max(rows,r=>Math.max(r.author,r.coauthor))||1]).range([0,width-60]);
+  const svg=figureSvg(target,width,230,rows.map(r=>`${r.label}: ${r.author} autorías y ${r.coauthor} coautorías`).join('. '));
+  rows.forEach((r,i)=>{const y=16+i*54;
     svg.append('text').attr('x',0).attr('y',y).style('font-size','12px').style('fill','#202726').text(r.label);
-    for(const [key,offset,opacity] of [['author',8,1],['coauthor',29,.3]]){
+    for(const [key,offset,opacity] of [['author',8,1],['coauthor',24,.3]]){
+      const icon=svg.append('g').attr('transform',`translate(2,${y+offset})`).attr('aria-hidden','true').attr('fill','none').attr('stroke','#596461').attr('stroke-width',1.2);
+      icon.append('circle').attr('cx',5).attr('cy',3).attr('r',2);icon.append('path').attr('d','M1,12 V10 Q1,6 5,6 Q9,6 9,10 V12');
+      if(key==='coauthor'){icon.append('circle').attr('cx',12).attr('cy',3).attr('r',2);icon.append('path').attr('d','M10,6 Q16,6 16,10 V12');}
       const projects=key==='author'?stats.authored:stats.coauthored;
       const approved=projects.filter(p=>p.categoria===r.id&&p.sancion).length,remaining=r[key]-approved;
-      svg.append('rect').attr('x',0).attr('y',y+offset).attr('width',x(approved)).attr('height',16).attr('fill',r.color).attr('opacity',opacity).append('title').text(`${fmt(approved)} con sanción`);
-      svg.append('rect').attr('x',x(approved)).attr('y',y+offset).attr('width',x(remaining)).attr('height',16).attr('fill',r.color).attr('opacity',opacity*.2).append('title').text(`${fmt(remaining)} sin sanción registrada`);
-      svg.append('line').attr('x1',x(approved)).attr('x2',x(approved)).attr('y1',y+offset).attr('y2',y+offset+16).attr('stroke','#fffdf4');
-      svg.append('text').attr('x',x(r[key])+5).attr('y',y+offset+12).text(fmt(r[key]));
+      svg.append('rect').attr('x',22).attr('y',y+offset).attr('width',x(approved)).attr('height',12).attr('fill',r.color).attr('opacity',opacity).append('title').text(`${fmt(approved)} con sanción`);
+      svg.append('rect').attr('x',22+x(approved)).attr('y',y+offset).attr('width',x(remaining)).attr('height',12).attr('fill',r.color).attr('opacity',opacity*.2).append('title').text(`${fmt(remaining)} sin sanción registrada`);
+      svg.append('line').attr('x1',22+x(approved)).attr('x2',22+x(approved)).attr('y1',y+offset).attr('y2',y+offset+12).attr('stroke','#fffdf4');
+      svg.append('text').attr('x',22+x(r[key])+5).attr('y',y+offset+10).text(fmt(r[key]));
     }
   });
   d3.select(target).append('div').attr('class','type-role-legend').html(['Autoría','Coautoría'].map((label,i)=>`<span><span class="type-swatches">${rows.map(r=>`<i style="background:${r.color};opacity:${i?.3:1}"></i>`).join('')}</span>${label}</span>`).join(''));
@@ -184,7 +187,7 @@ function renderProfile(){
   portraitFallbacks();
   profileMetricsChart(s);
   profileTypesChart('#profile-types',s.types,s);
-  const collabs=partners(selected,p.id,visiblePeople).slice(0,10);
+  const collabs=partners(selected,p.id,visiblePeople).slice(0,5);
   $('#profile-partners').innerHTML=collabs.length?collabs.map(c=>`<a class="profile-partner" href="#ficha/${c.id}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></a>`).join(''):'<p class="empty">Sin proyectos compartidos.</p>';
   const status=$('#profile-status'),previous=status.value;
   status.innerHTML='<option value="all">Todos los estados</option>'+[...new Set(s.signed.map(p=>p.estado))].sort().map(value=>`<option value="${esc(value)}">${esc(value.toLocaleLowerCase('es-AR'))}</option>`).join('');

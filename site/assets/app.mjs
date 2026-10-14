@@ -7,6 +7,12 @@ const displayName = name => name.split(',').map(s=>s.trim().toLocaleLowerCase('e
 const cat = id => categories.find(c=>c.id===id);
 const group = person => dataset.grupos_visuales?.find(g=>g.id===person?.grupo_visual)||dataset.grupos.find(g=>g.id===person?.grupo)||{nombre:person?.bloque_referencia||'Bloque no disponible',color:'#727a77'};
 function groupBadge(person){const g=group(person);return `<span class="group-badge" style="--group:${g.color}"><i aria-hidden="true"></i>${esc(person.bloque_referencia||g.nombre)}</span>`;}
+function avatar(person,profile=false){
+  return `<span class="avatar${person.foto?' portrait':''}" aria-hidden="true"${profile?` style="border-left:5px solid ${group(person).color}"`:''}>${esc(initials(person.nombre))}${person.foto?`<img src="${esc(person.foto)}" alt="" loading="${profile?'eager':'lazy'}" decoding="async" referrerpolicy="no-referrer">`:''}</span>`;
+}
+function portraitFallbacks(){
+  document.querySelectorAll('.portrait img').forEach(img=>img.addEventListener('error',()=>{img.remove();},{once:true}));
+}
 function blockLabel(person){return person.bloque_referencia_nota||'Bloque de referencia';}
 function groupLegend(target){$(target).innerHTML=(dataset.grupos_visuales||dataset.grupos.filter(g=>g.vigente)).filter(g=>!$('#active-only').checked||g.id!=='historicos').map(g=>`<span class="legend-item" style="--cat:${g.color}"><i aria-hidden="true"></i>${esc(g.nombre)}</span>`).join('');}
 const dateFmt = date => new Date(date+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'});
@@ -123,8 +129,9 @@ function renderPeople(){
   $('#person-count').textContent=`${fmt(people.length)} legisladores`;
   $('#person-cards').innerHTML=people.length?people.map(p=>{
     const s=stats.get(p.id),total=s.signed.length;
-    return `<a class="person-card" href="#ficha/${p.id}" style="--group:${group(p).color}"><div class="person-top"><span class="avatar" aria-hidden="true">${esc(initials(p.nombre))}</span><div><h2>${esc(displayName(p.nombre))}</h2><p class="person-meta">${p.activo?'Padrón activo':'Con actividad en el ciclo'}</p></div></div>${groupBadge(p)}<p class="card-block">${esc(blockLabel(p))}</p><div class="card-numbers"><div><strong>${fmt(s.author)}</strong><span>Autorías</span></div><div><strong>${fmt(s.coauthor)}</strong><span>Coautorías</span></div></div><div class="mini-stack" aria-hidden="true">${s.types.map(t=>`<i style="--cat:${t.color};width:${total?(t.author+t.coauthor)/total*100:0}%"></i>`).join('')}</div><div class="card-foot"><span>${fmt(s.sanction)} con sanción · ${fmt(s.session)} en sesión</span><span class="arrow" aria-hidden="true">↗</span></div></a>`;
+    return `<a class="person-card" href="#ficha/${p.id}" style="--group:${group(p).color}"><div class="person-top">${avatar(p)}<div><h2>${esc(displayName(p.nombre))}</h2><p class="person-meta">${p.activo?'Padrón activo':'Con actividad en el ciclo'}</p></div></div>${groupBadge(p)}<p class="card-block">${esc(blockLabel(p))}</p><div class="card-numbers"><div><strong>${fmt(s.author)}</strong><span>Autorías</span></div><div><strong>${fmt(s.coauthor)}</strong><span>Coautorías</span></div></div><div class="mini-stack" aria-hidden="true">${s.types.map(t=>`<i style="--cat:${t.color};width:${total?(t.author+t.coauthor)/total*100:0}%"></i>`).join('')}</div><div class="card-foot"><span>${fmt(s.sanction)} con sanción · ${fmt(s.session)} en sesión</span><span class="arrow" aria-hidden="true">↗</span></div></a>`;
   }).join(''):'<p class="empty">Sin resultados. Cambiá los filtros.</p>';
+  portraitFallbacks();
 }
 function openProfileProjects(role,filter){
   $('#profile-role').value=role;
@@ -142,7 +149,8 @@ function blockTimeline(person){
 function renderProfile(){
   const p=peopleById.get(personId);if(!p){$('#profile-heading').innerHTML='<p class="empty">Ficha no disponible. Volvé al listado.</p>';$('#profile-metrics').innerHTML='';$('#profile-types').innerHTML='';$('#profile-partners').innerHTML='';$('#profile-projects').innerHTML='';return;}
   const s=stats.get(p.id);
-  $('#profile-heading').innerHTML=`<span class="avatar" aria-hidden="true" style="border-left:5px solid ${group(p).color}">${esc(initials(p.nombre))}</span><div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${dateFmt(p.mandato_actual.desde)} — ${dateFmt(p.mandato_actual.hasta)}</p>`:''}${blockTimeline(p)}</div><a class="text-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
+  $('#profile-heading').innerHTML=`${avatar(p,true)}<div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${dateFmt(p.mandato_actual.desde)} — ${dateFmt(p.mandato_actual.hasta)}</p>`:''}${blockTimeline(p)}</div><a class="text-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
+  portraitFallbacks();
   profileMetricsChart(s);
   categoriesChart('#profile-types',s.types,true);
   const collabs=partners(selected,p.id,visiblePeople).slice(0,10);

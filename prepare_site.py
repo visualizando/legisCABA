@@ -140,6 +140,7 @@ def main():
         group=groups[block]['id']
         people.append({'id':pid,'nombre':f"{r['apellido'].strip()}, {r['nombre'].strip()}",
             'activo':pid in current,'bloque_actual':a.get('bloque'),
+            'foto':a.get('fotoM') or a.get('fotoS') or a.get('foto') or None,
             'mandato_actual':{'desde':datetime.strptime(a['fecha_inicio_mandato'],'%d/%m/%Y').date().isoformat(),
                 'hasta':datetime.strptime(a['fecha_fin_mandato'],'%d/%m/%Y').date().isoformat()} if a else None,
             'bloque_referencia':block,'bloque_referencia_nota':block_note,'grupo':group,'bloques_historia':history,

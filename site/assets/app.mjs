@@ -137,7 +137,7 @@ function renderNetwork(){
   $('#network-stats').textContent=`${graph.nodes.length} nodos · ${fmt(graph.edges.length)} vínculos · ${graph.omitted} sin vínculos visibles`;
   groupLegend('#network-legend');
   if(!graph.nodes.length){svg.append('text').attr('x',w/2).attr('y',h/2).attr('text-anchor','middle').attr('fill','#596461').text('Sin conexiones con este umbral. Probá reducirlo.');selectedNode=null;renderNetworkDetail();$('#edge-table').innerHTML='<p class="empty">No hay conexiones visibles para estos filtros.</p>';return;}
-  const layer=svg.append('g');graphZoom=d3.zoom().scaleExtent([.35,4]).on('zoom',event=>layer.attr('transform',event.transform));svg.call(graphZoom).on('dblclick.zoom',null);
+  const layer=svg.append('g');graphZoom=d3.zoom().scaleExtent([.35,4]).filter(event=>!event.button&&(event.type!=='wheel'||event.ctrlKey)).on('zoom',event=>layer.attr('transform',event.transform));svg.call(graphZoom).on('dblclick.zoom',null).call(graphZoom.transform,d3.zoomIdentity);
   const radius=d3.scaleSqrt().domain([0,d3.max(graph.nodes,n=>n.total)]).range([4,19]);
   const thickness=d3.scaleSqrt().domain([minimum,d3.max(graph.edges,e=>e.value)||minimum+1]).range([.5,3]);
   const nodes=graph.nodes.map(n=>({...n})),edges=graph.edges.map(e=>({...e}));

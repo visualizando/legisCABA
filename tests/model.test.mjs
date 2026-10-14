@@ -45,4 +45,5 @@ test('La exportación real conserva identidades, fechas y el expediente de contr
   assert.equal(casielles.grupo_visual,'otros');
   assert.notEqual(casielles.grupo,'otros');
   assert.ok(data.grupos_visuales.filter(g=>!['otros','historicos'].includes(g.id)).every(g=>g.bancas>1));
+  assert.ok(data.legisladores.filter(p=>['Unión por la Patria','Fuerza por Buenos Aires'].includes(p.bloque_referencia)).every(p=>p.grupo_visual==='peronismo'));
 });

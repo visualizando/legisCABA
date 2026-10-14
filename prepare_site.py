@@ -149,8 +149,14 @@ def main():
     visual_groups.sort(key=lambda b:-b['bancas'])
     visual_groups.append({'id':'otros','nombre':'Otros','color':'#727a77','bancas':sum(n for n in counts.values() if n==1)})
     prominent={b['id'] for b in visual_groups if b['id']!='otros'}
+    peronist_blocks={'Unión por la Patria','Fuerza por Buenos Aires'}
+    reference=official_blocks.get('Fuerza por Buenos Aires') or official_blocks.get('Unión por la Patria')
+    if reference:
+        visual_groups=[b for b in visual_groups if b['nombre'] not in peronist_blocks]
+        visual_groups.insert(0,{'id':'peronismo','nombre':'Peronismo','color':reference['color'],
+            'bancas':sum(counts[b] for b in peronist_blocks),'agrupacion':True})
     for person in people:
-        person['grupo_visual']=person['grupo'] if person['grupo'] in prominent else 'otros' if person['activo'] else 'historicos'
+        person['grupo_visual']='peronismo' if reference and person['bloque_referencia'] in peronist_blocks else person['grupo'] if person['grupo'] in prominent else 'otros' if person['activo'] else 'historicos'
     visual_groups.append({'id':'historicos','nombre':'Bloques históricos sin color publicado','color':'#a6adaa','bancas':0})
     output={'actualizado':data['actualizado'],'enriquecido':datetime.now(timezone.utc).isoformat(),'desde':data['desde'],'hasta':data['hasta'],
         'sesiones_consultadas':len(sessions),'legisladores':people,'proyectos':projects,

@@ -8,10 +8,10 @@ const cat = id => categories.find(c=>c.id===id);
 const group = person => dataset.grupos_visuales?.find(g=>g.id===person?.grupo_visual)||dataset.grupos.find(g=>g.id===person?.grupo)||{nombre:person?.bloque_referencia||'Bloque no disponible',color:'#727a77'};
 function groupBadge(person){const g=group(person);return `<span class="group-badge" style="--group:${g.color}"><i aria-hidden="true"></i>${esc(person.bloque_referencia||g.nombre)}</span>`;}
 function blockLabel(person){return person.bloque_referencia_nota||'Bloque de referencia';}
-function groupLegend(target){$(target).innerHTML=(dataset.grupos_visuales||dataset.grupos.filter(g=>g.vigente)).map(g=>`<span class="legend-item" style="--cat:${g.color}"><i aria-hidden="true"></i>${esc(g.nombre)}</span>`).join('');}
+function groupLegend(target){$(target).innerHTML=(dataset.grupos_visuales||dataset.grupos.filter(g=>g.vigente)).filter(g=>!$('#active-only').checked||g.id!=='historicos').map(g=>`<span class="legend-item" style="--cat:${g.color}"><i aria-hidden="true"></i>${esc(g.nombre)}</span>`).join('');}
 const dateFmt = date => new Date(date+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'});
 const initials = name => name.split(',').map(s=>s.trim()[0]||'').join('').slice(0,2);
-let dataset, selected=[],stats=new Map(),peopleById,route='panorama',personId=null;
+let dataset, selected=[],visiblePeople=[],stats=new Map(),peopleById,route='panorama',personId=null;
 let graph, graphZoom, selectedNode=null;
 const pagination = {all:0,profile:0};
 const state = {year:'all',category:'all'};
@@ -78,18 +78,19 @@ function monthlyChart(){
   svg.append('g').attr('class','axis').attr('transform',`translate(0,${h-m.b})`).call(d3.axisBottom(x).tickValues(months.filter((m,i)=>i%step===0).map(m=>m.key)).tickFormat(k=>new Date(k+'-01T12:00:00').toLocaleDateString('es-AR',{month:'short',year:'2-digit'})));
 }
 function renderOverview(){
-  const ids=new Set(selected.flatMap(signers).filter(id=>peopleById.has(id)));
+  const visibleIds=new Set(visiblePeople.map(p=>p.id));
+  const ids=new Set(selected.flatMap(signers).filter(id=>visibleIds.has(id)));
   $('#overview-metrics').innerHTML=metric(selected.length,'Proyectos presentados','Expedientes únicos')+metric(ids.size,'Legisladores con firmas','Autoría o coautoría')+metric(selected.filter(p=>p.sancion).length,'Con sanción','Indicador oficial del expediente')+metric(selected.filter(p=>p.sesiones.length).length,'Con registro en sesión','Presencia en asuntos considerados');
   const rows=categories.map(c=>({...c,value:selected.filter(p=>p.categoria===c.id).length}));
   categoriesChart('#type-chart',rows);monthlyChart();legend('#type-legend');
   $('#type-chart-table').innerHTML=`<details><summary>Ver tabla</summary><table><thead><tr><th>Tipo</th><th>Proyectos</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.label}</td><td>${fmt(r.value)}</td></tr>`).join('')}</tbody></table></details>`;
-  const ranking=[...dataset.legisladores].sort((a,b)=>stats.get(b.id).author-stats.get(a.id).author||a.nombre.localeCompare(b.nombre,'es')).filter(p=>stats.get(p.id).author>0).slice(0,10),max=stats.get(ranking[0]?.id)?.author||1;
+  const ranking=[...visiblePeople].sort((a,b)=>stats.get(b.id).author-stats.get(a.id).author||a.nombre.localeCompare(b.nombre,'es')).filter(p=>stats.get(p.id).author>0).slice(0,10),max=stats.get(ranking[0]?.id)?.author||1;
   $('#ranking').innerHTML=ranking.length?ranking.map((p,i)=>`<a class="rank-row" href="#ficha/${p.id}"><span class="rank-num">${String(i+1).padStart(2,'0')}</span><span class="rank-main">${esc(displayName(p.nombre))}<span class="rank-political">${groupBadge(p)}</span><span class="rank-bar" aria-hidden="true"><i style="width:${stats.get(p.id).author/max*100}%;background:${group(p).color}"></i></span></span><span class="rank-value">${fmt(stats.get(p.id).author)}</span></a>`).join(''):'<p class="empty">Sin autorías. Cambiá los filtros.</p>';
 }
 function renderPeople(){
   const term=normalize($('#person-search').value),order=$('#person-sort').value;
   const filterGroup=$('#person-group').value;
-  const people=dataset.legisladores.filter(p=>normalize(p.nombre+' '+p.bloque_referencia+' '+group(p).nombre).includes(term)&&(!$('#active-only').checked||p.activo)&&(filterGroup==='all'||p.grupo===filterGroup));
+  const people=visiblePeople.filter(p=>normalize(p.nombre+' '+p.bloque_referencia+' '+group(p).nombre).includes(term)&&(filterGroup==='all'||p.grupo===filterGroup||filterGroup==='visual:peronismo'&&p.grupo_visual==='peronismo'));
   groupLegend('#people-group-legend');
   people.sort((a,b)=>order==='name'?a.nombre.localeCompare(b.nombre,'es'):stats.get(b.id)[order]-stats.get(a.id)[order]||a.nombre.localeCompare(b.nombre,'es'));
   $('#person-count').textContent=`${fmt(people.length)} legisladores`;
@@ -104,7 +105,7 @@ function renderProfile(){
   $('#profile-heading').innerHTML=`<span class="avatar" aria-hidden="true" style="border-left:5px solid ${group(p).color}">${esc(initials(p.nombre))}</span><div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${dateFmt(p.mandato_actual.desde)} — ${dateFmt(p.mandato_actual.hasta)}</p>`:''}<details class="block-history"><summary>Historial de bloques</summary><ul>${p.bloques_historia.map(b=>`<li>${esc(b.bloque)} · ${dateFmt(b.desde)} — ${b.hasta?dateFmt(b.hasta):'sin fecha de fin'}</li>`).join('')}</ul></details></div><a class="text-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
   $('#profile-metrics').innerHTML=metric(s.author,'Proyectos como autor/a','Firma principal')+metric(s.coauthor,'Proyectos como coautor/a','Sin contar sus autorías')+metric(s.sanction,'Con sanción',`${fmt(s.authored.filter(p=>p.sancion).length)} autorías · ${fmt(s.coauthored.filter(p=>p.sancion).length)} coautorías`)+metric(s.session,'Con registro en sesión',`${fmt(s.authored.filter(p=>p.sesiones.length).length)} autorías · ${fmt(s.coauthored.filter(p=>p.sesiones.length).length)} coautorías`);
   categoriesChart('#profile-types',s.types,true);
-  const collabs=partners(selected,p.id,dataset.legisladores).slice(0,10);
+  const collabs=partners(selected,p.id,visiblePeople).slice(0,10);
   $('#profile-partners').innerHTML=collabs.length?collabs.map(c=>`<a class="profile-partner" href="#ficha/${c.id}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></a>`).join(''):'<p class="empty">Sin proyectos compartidos.</p>';
   const role=$('#profile-role').value;renderProjects('#profile-projects',role==='author'?s.authored:role==='coauthor'?s.coauthored:s.signed,'profile');
   document.title=`${displayName(p.nombre)} — LegisCABA`;
@@ -131,7 +132,7 @@ function renderAllProjects(){
 
 function renderNetwork(){
   const minimum=Number($('#edge-min').value),mode=$('#edge-mode').value;
-  graph=makeGraph(selected,dataset.legisladores,mode,minimum);graphZoom=null;const svg=d3.select('#network');svg.selectAll('*').remove();
+  graph=makeGraph(selected,visiblePeople,mode,minimum);graphZoom=null;const svg=d3.select('#network');svg.selectAll('*').remove();
   $('#zoom-in').disabled=!graph.nodes.length;$('#zoom-out').disabled=!graph.nodes.length;
   const w=Math.max(320,$('#network').clientWidth),h=Math.min(600,Math.max(420,w/1.4));svg.attr('viewBox',`0 0 ${w} ${h}`);svg.append('title').text('Red de proyectos compartidos entre legisladores');
   $('#network-stats').textContent=`${graph.nodes.length} nodos · ${fmt(graph.edges.length)} vínculos · ${graph.omitted} sin vínculos visibles`;
@@ -187,6 +188,8 @@ function render(){
 function applyFilters(){
   state.year=$('#year').value;state.category=$('#category').value;
   selected=filterProjects(dataset.proyectos,state.year,state.category);
+  visiblePeople=dataset.legisladores.filter(p=>!$('#active-only').checked||p.activo);
+  if($('#active-only').checked){const ids=new Set(visiblePeople.map(p=>p.id));selected=selected.filter(p=>signers(p).some(id=>ids.has(id)));}
   stats=new Map(dataset.legisladores.map(p=>[p.id,personStats(selected,p.id)]));
   $('#filter-count').textContent=`${fmt(selected.length)} proyectos`;
   pagination.all=0;pagination.profile=0;render();
@@ -204,7 +207,7 @@ async function init(){
     peopleById=new Map(dataset.legisladores.map(p=>[p.id,p]));
     const composition=dataset.composicion_actual||{total:dataset.legisladores.filter(p=>p.activo).length,consultada:dataset.enriquecido,fuente:'https://www.legislatura.gob.ar/seccion/composicion-actual.html'};
     $('#current-composition-note').innerHTML=`${fmt(composition.total)} en la composición actual · ${new Date(composition.consultada).toLocaleDateString('es-AR')}. <a href="${esc(composition.fuente)}" target="_blank" rel="noopener">Fuente oficial ↗</a>`;
-    $('#person-group').insertAdjacentHTML('beforeend',dataset.grupos.map(g=>`<option value="${g.id}">${esc(g.nombre)}</option>`).join(''));
+    $('#person-group').insertAdjacentHTML('beforeend','<option value="visual:peronismo">Peronismo</option>'+dataset.grupos.filter(g=>!['Unión por la Patria','Fuerza por Buenos Aires'].includes(g.nombre)).map(g=>`<option value="${g.id}">${esc(g.nombre)}</option>`).join(''));
     $('#group-mapping').innerHTML=`<details><summary>Ver nombres y colores oficiales</summary><div class="table-scroll"><table><thead><tr><th>Bloque de referencia</th><th>Identificación y color</th></tr></thead><tbody>${[...new Set(dataset.legisladores.map(p=>p.bloque_referencia))].sort().map(b=>{const p=dataset.legisladores.find(p=>p.bloque_referencia===b);return `<tr><td>${esc(b||'No disponible')}</td><td>${groupBadge(p)}</td></tr>`;}).join('')}</tbody></table></div></details>`;
     const years=[...new Set(dataset.proyectos.map(p=>p.fecha.slice(0,4)))].sort().reverse();
     $('#year').insertAdjacentHTML('beforeend',years.map(y=>`<option value="${y}">${y}</option>`).join(''));
@@ -214,8 +217,8 @@ async function init(){
     $('#load-state').hidden=true;$('#app').hidden=false;
     $('#global-filters').addEventListener('submit',e=>e.preventDefault());
     $('#year').addEventListener('change',applyFilters);$('#category').addEventListener('change',applyFilters);
-    $('#reset-filters').addEventListener('click',()=>{$('#year').value='all';$('#category').value='all';applyFilters();});
-    $('#person-search').addEventListener('input',debounce(renderPeople));$('#person-sort').addEventListener('change',renderPeople);$('#active-only').addEventListener('change',renderPeople);$('#person-group').addEventListener('change',renderPeople);
+    $('#reset-filters').addEventListener('click',()=>{$('#year').value='all';$('#category').value='all';$('#active-only').checked=false;applyFilters();});
+    $('#person-search').addEventListener('input',debounce(renderPeople));$('#person-sort').addEventListener('change',renderPeople);$('#active-only').addEventListener('change',applyFilters);$('#person-group').addEventListener('change',renderPeople);
     $('#project-search').addEventListener('input',debounce(()=>{pagination.all=0;renderAllProjects();}));$('#project-status').addEventListener('change',()=>{pagination.all=0;renderAllProjects();});
     $('#profile-role').addEventListener('change',()=>{pagination.profile=0;renderProfile();});
     $('#edge-min').addEventListener('change',renderNetwork);$('#edge-mode').addEventListener('change',renderNetwork);

@@ -96,12 +96,12 @@ function renderPeople(){
   $('#person-cards').innerHTML=people.length?people.map(p=>{
     const s=stats.get(p.id),total=s.signed.length;
     return `<a class="person-card" href="#ficha/${p.id}" style="--group:${group(p).color}"><div class="person-top"><span class="avatar" aria-hidden="true">${esc(initials(p.nombre))}</span><div><h2>${esc(displayName(p.nombre))}</h2><p class="person-meta">${p.activo?'Padrón activo':'Con actividad en el ciclo'}</p></div></div>${groupBadge(p)}<p class="card-block">${esc(blockLabel(p))}</p><div class="card-numbers"><div><strong>${fmt(s.author)}</strong><span>Autorías</span></div><div><strong>${fmt(s.coauthor)}</strong><span>Coautorías</span></div></div><div class="mini-stack" aria-hidden="true">${s.types.map(t=>`<i style="--cat:${t.color};width:${total?(t.author+t.coauthor)/total*100:0}%"></i>`).join('')}</div><div class="card-foot"><span>${fmt(s.sanction)} con sanción · ${fmt(s.session)} en sesión</span><span class="arrow" aria-hidden="true">↗</span></div></a>`;
-  }).join(''):'<p class="empty">No hay fichas que coincidan. Borrá el nombre o desmarcá “Solo padrón activo”.</p>';
+  }).join(''):'<p class="empty">No hay fichas que coincidan. Borrá el nombre o desmarcá “Solo composición actual”.</p>';
 }
 function renderProfile(){
   const p=peopleById.get(personId);if(!p){$('#profile-heading').innerHTML='<p class="empty">Esta ficha no está disponible. Volvé al listado de legisladores.</p>';$('#profile-metrics').innerHTML='';$('#profile-types').innerHTML='';$('#profile-partners').innerHTML='';$('#profile-projects').innerHTML='';return;}
   const s=stats.get(p.id);
-  $('#profile-heading').innerHTML=`<span class="avatar" aria-hidden="true" style="border-left:5px solid ${group(p).color}">${esc(initials(p.nombre))}</span><div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p><details class="block-history"><summary>Ver períodos de pertenencia</summary><ul>${p.bloques_historia.map(b=>`<li>${esc(b.bloque)} · ${dateFmt(b.desde)} — ${b.hasta?dateFmt(b.hasta):'sin fecha de fin'}</li>`).join('')}</ul></details></div><a class="text-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
+  $('#profile-heading').innerHTML=`<span class="avatar" aria-hidden="true" style="border-left:5px solid ${group(p).color}">${esc(initials(p.nombre))}</span><div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${dateFmt(p.mandato_actual.desde)} — ${dateFmt(p.mandato_actual.hasta)}</p>`:''}<details class="block-history"><summary>Ver períodos de pertenencia</summary><ul>${p.bloques_historia.map(b=>`<li>${esc(b.bloque)} · ${dateFmt(b.desde)} — ${b.hasta?dateFmt(b.hasta):'sin fecha de fin'}</li>`).join('')}</ul></details></div><a class="text-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
   $('#profile-metrics').innerHTML=metric(s.author,'Proyectos como autor/a','Firma principal')+metric(s.coauthor,'Proyectos como coautor/a','Sin contar sus autorías')+metric(s.sanction,'Firmados con sanción',`${fmt(s.authored.filter(p=>p.sancion).length)} autorías · ${fmt(s.coauthored.filter(p=>p.sancion).length)} coautorías`)+metric(s.session,'Firmados con registro en sesión',`${fmt(s.authored.filter(p=>p.sesiones.length).length)} autorías · ${fmt(s.coauthored.filter(p=>p.sesiones.length).length)} coautorías`);
   categoriesChart('#profile-types',s.types,true);
   const collabs=partners(selected,p.id,dataset.legisladores).slice(0,10);
@@ -199,9 +199,11 @@ function navigate(){
 const debounce=(fn,ms=120)=>{let timer;return(...args)=>{clearTimeout(timer);timer=setTimeout(()=>fn(...args),ms);};};
 async function init(){
   try{
-    const response=await fetch('data/monitor.json');if(!response.ok)throw new Error('No se pudo leer monitor.json');dataset=await response.json();
+    const response=await fetch('data/monitor.json',{cache:'no-cache'});if(!response.ok)throw new Error('No se pudo leer monitor.json');dataset=await response.json();
     if(!globalThis.d3)throw new Error('D3 no está disponible');
     peopleById=new Map(dataset.legisladores.map(p=>[p.id,p]));
+    const composition=dataset.composicion_actual||{total:dataset.legisladores.filter(p=>p.activo).length,consultada:dataset.enriquecido,fuente:'https://www.legislatura.gob.ar/seccion/composicion-actual.html'};
+    $('#current-composition-note').innerHTML=`Composición actual: ${fmt(composition.total)} legisladores · verificada el ${new Date(composition.consultada).toLocaleDateString('es-AR')}. <a href="${esc(composition.fuente)}" target="_blank" rel="noopener">Fuente oficial ↗</a>`;
     $('#person-group').insertAdjacentHTML('beforeend',dataset.grupos.map(g=>`<option value="${g.id}">${esc(g.nombre)}</option>`).join(''));
     $('#group-mapping').innerHTML=`<details><summary>Ver correspondencia de bloques y grupos</summary><div class="table-scroll"><table><thead><tr><th>Bloque de referencia</th><th>Grupo</th></tr></thead><tbody>${[...new Set(dataset.legisladores.map(p=>p.bloque_referencia))].sort().map(b=>{const p=dataset.legisladores.find(p=>p.bloque_referencia===b);return `<tr><td>${esc(b||'No disponible')}</td><td>${groupBadge(p)}</td></tr>`;}).join('')}</tbody></table></div></details>`;
     const years=[...new Set(dataset.proyectos.map(p=>p.fecha.slice(0,4)))].sort().reverse();

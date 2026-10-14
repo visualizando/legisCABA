@@ -35,4 +35,8 @@ test('La exportación real conserva identidades, fechas y el expediente de contr
   assert.deepEqual(data.grupos.slice(0,5).map(g=>g.color),expected);
   assert.ok(data.legisladores.every(p=>p.bloque_referencia&&data.grupos.some(g=>g.id===p.grupo)));
   assert.ok(data.legisladores.every(p=>p.bloque_referencia_nota));
+  const current=data.legisladores.filter(p=>p.activo);
+  assert.equal(current.length,data.composicion_actual.total);
+  assert.ok(current.every(p=>p.mandato_actual?.desde&&p.mandato_actual?.hasta));
+  assert.equal(data.composicion_actual.fuente,'https://www.legislatura.gob.ar/seccion/composicion-actual.html');
 });

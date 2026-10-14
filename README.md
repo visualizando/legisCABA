@@ -49,6 +49,8 @@ Categorías: ley (2.206), declaraciones (4.331), pedidos de informes aproximados
 
 Identificación política: cada legislador muestra el bloque oficial de referencia y un gran grupo. Nombres y colores tomados de [Elecciones 2027 CABA](https://old.observablehq.com/@rusosnith/elecciones-2027-caba): Izquierda `#cb1f00`, Centro izquierda `#34aad7`, Centro `#00ae77`, Centro derecha `#efb118`, Derecha `#c367b3`. `political_groups.json` contiene la correspondencia editorial explícita y editable de bloques a grupos. Se muestran períodos oficiales obtenidos con `GetLegisladoresBloques`; la referencia es el bloque actual o último del ciclo, y se advierte si solo se conoce uno anterior. El color de la red identifica al grupo; los gráficos de proyectos siguen usando colores por categoría. Transformación queda “Sin clasificar” hasta definir su correspondencia.
 
+La [Composición Actual oficial](https://www.legislatura.gob.ar/seccion/composicion-actual.html) carga su tabla mediante `GetDiputadosActivosNuevo`, POST `id_bloque` vacío: es el mismo servicio usado por el monitor. Verificado el 14/10/2026: 60 legisladores, sin diferencias de IDs o bloques con la captura anterior. `composicion_actual` registra fuente, fecha de consulta y cantidades por bloque; las fichas incluyen las fechas del mandato vigente. El filtro “Solo composición actual” permite explorar esos 60 legisladores dentro del padrón del ciclo. Cada actualización programada vuelve a consultar esa fuente.
+
 ```sh
 python prepare_site.py --refresh
 node --test tests/model.test.mjs

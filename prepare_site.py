@@ -120,11 +120,17 @@ def main():
         group=group_config['bloques'].get(block,'sin-clasificar')
         people.append({'id':pid,'nombre':f"{r['apellido'].strip()}, {r['nombre'].strip()}",
             'activo':pid in current,'bloque_actual':a.get('bloque'),
+            'mandato_actual':{'desde':datetime.strptime(a['fecha_inicio_mandato'],'%d/%m/%Y').date().isoformat(),
+                'hasta':datetime.strptime(a['fecha_fin_mandato'],'%d/%m/%Y').date().isoformat()} if a else None,
             'bloque_referencia':block,'bloque_referencia_nota':block_note,'grupo':group,'bloques_historia':history,
             'url':BASE+'pages/legislador.aspx?id='+pid})
     output={'actualizado':data['actualizado'],'enriquecido':datetime.now(timezone.utc).isoformat(),'desde':data['desde'],'hasta':data['hasta'],
         'sesiones_consultadas':len(sessions),'legisladores':people,'proyectos':projects,
         'grupos':group_config['grupos'],'grupos_fuente':group_config['fuente'],
+        'composicion_actual':{'fuente':'https://www.legislatura.gob.ar/seccion/composicion-actual.html',
+            'servicio':BASE+'webservices/Json.asmx/GetDiputadosActivosNuevo','total':len(current),
+            'consultada':datetime.fromtimestamp((CACHE/'active.xml').stat().st_mtime,timezone.utc).isoformat(),
+            'bloques':dict(Counter(a['bloque'] for a in current.values()))},
         'metodologia':{'informes':'Heurística sobre el inicio del sumario de resoluciones; no clasificación oficial.',
             'sesion':'Asuntos considerados con ID de expediente; no mide debate individual ni duración.',
             'sancion':'Indicador oficial TieneSancion: no acredita promulgación, vigencia ni ausencia de veto.',

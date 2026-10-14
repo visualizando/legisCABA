@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
-  <link rel="stylesheet" href="assets/compact.css?v=20261014-meses">
+  <link rel="stylesheet" href="assets/compact.css?v=20261014-orden">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261014-meses"></script>
+  <script type="module" src="assets/app.mjs?v=20261014-orden"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -37,7 +37,7 @@
     </section>
 
     <section id="view-legisladores" class="view" hidden>
-      <div class="section-tools" id="people-filters"><label class="search">Buscar legislador<input id="person-search" type="search" placeholder="Apellido, nombre o bloque" autocomplete="off"></label><label>Bloque<select id="person-group"><option value="all">Todos los bloques</option></select></label><label>Ordenar fichas<select id="person-sort"><option value="author">Más autorías</option><option value="coauthor">Más coautorías</option><option value="sanction">Más proyectos con sanción</option><option value="name">Apellido, A–Z</option></select></label></div><div id="people-group-legend" class="legend"></div><p id="person-count" role="status" class="note"></p><div id="person-cards" class="person-grid"></div>
+      <div class="section-tools" id="people-filters"><label class="search">Buscar legislador<input id="person-search" type="search" placeholder="Apellido, nombre o bloque" autocomplete="off"></label><label>Bloque<select id="person-group"><option value="all">Todos los bloques</option></select></label></div><div id="person-sort" class="sort-controls" role="group" aria-label="Ordenar fichas"><span>Ordenar</span><button type="button" data-sort="author" aria-pressed="true"><span aria-hidden="true">↓</span> Autorías</button><button type="button" data-sort="coauthor" aria-pressed="false"><span aria-hidden="true">↓</span> Coautorías</button><button type="button" data-sort="sanction" aria-pressed="false"><span aria-hidden="true">↓</span> Con sanción</button><button type="button" data-sort="name" aria-pressed="false"><span aria-hidden="true">↕</span> A–Z</button></div><div id="people-group-legend" class="legend"></div><p id="person-count" role="status" class="sr-only"></p><div id="person-cards" class="person-grid"></div>
     </section>
 
     <section id="view-ficha" class="view" hidden>

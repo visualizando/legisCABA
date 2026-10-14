@@ -128,7 +128,7 @@ function monthlySpark(projects,role){
   return `<svg class="monthly-spark" viewBox="0 0 ${width} 28" role="img" aria-label="${role} por mes, ${months[0]} a ${months.at(-1)}"><title>${months.map(m=>`${m}: ${counts.get(m)}`).join('; ')}</title>${months.map((m,i)=>`<rect x="${i*3}" y="${28-counts.get(m)/max*26}" width="2" height="${counts.get(m)/max*26}" fill="currentColor"><title>${m}: ${counts.get(m)} ${role.toLowerCase()}</title></rect>`).join('')}</svg>`;
 }
 function renderPeople(){
-  const term=normalize($('#person-search').value),order=$('#person-sort').value;
+  const term=normalize($('#person-search').value),order=$('#person-sort [aria-pressed=true]').dataset.sort;
   const filterGroup=$('#person-group').value;
   const people=visiblePeople.filter(p=>normalize(p.nombre+' '+p.bloque_referencia+' '+group(p).nombre).includes(term)&&(filterGroup==='all'||p.grupo===filterGroup||filterGroup.startsWith('visual:')&&p.grupo_visual===filterGroup.slice(7)));
   const cardStats=new Map(visiblePeople.map(p=>[p.id,personStats(dataset.proyectos,p.id)]));
@@ -277,7 +277,7 @@ async function init(){
     $('#global-filters').addEventListener('submit',e=>e.preventDefault());
     $('#year').addEventListener('change',applyFilters);$('#category').addEventListener('change',applyFilters);
     $('#reset-filters').addEventListener('click',()=>{$('#year').value='all';$('#category').value='all';$('#active-only').checked=true;applyFilters();});
-    $('#person-search').addEventListener('input',debounce(renderPeople));$('#person-sort').addEventListener('change',renderPeople);$('#active-only').addEventListener('change',applyFilters);$('#person-group').addEventListener('change',renderPeople);
+    $('#person-search').addEventListener('input',debounce(renderPeople));$('#person-sort').querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{$('#person-sort').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));renderPeople();}));$('#active-only').addEventListener('change',applyFilters);$('#person-group').addEventListener('change',renderPeople);
     $('#project-search').addEventListener('input',debounce(()=>{pagination.all=0;renderAllProjects();}));$('#project-status').addEventListener('change',()=>{pagination.all=0;renderAllProjects();});
     ['#profile-role','#profile-session','#profile-sanction','#profile-status'].forEach(id=>$(id).addEventListener('change',()=>{pagination.profile=0;renderProfile();}));
     $('#profile-reset').addEventListener('click',()=>{['#profile-role','#profile-session','#profile-sanction','#profile-status'].forEach(id=>$(id).value='all');pagination.profile=0;renderProfile();});

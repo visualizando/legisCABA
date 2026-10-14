@@ -35,6 +35,33 @@ function figureSvg(target,width,height,label){
   const svg=root.append('svg').attr('viewBox',`0 0 ${width} ${height}`).attr('role','img').attr('aria-label',label);
   svg.append('title').text(label);return svg;
 }
+function profileMetricsChart(s){
+  const rows=[
+    {label:'Proyectos firmados',author:s.author,coauthor:s.coauthor},
+    {label:'Con sanción',author:s.authored.filter(p=>p.sancion).length,coauthor:s.coauthored.filter(p=>p.sancion).length},
+    {label:'Con registro en sesión',author:s.authored.filter(p=>p.sesiones.length).length,coauthor:s.coauthored.filter(p=>p.sesiones.length).length},
+  ];
+  const target='#profile-metrics',root=$(target);
+  root.innerHTML='<h2>Participación en proyectos</h2><div class="profile-role-legend"><span><i class="author-key"></i>Autoría</span><span><i class="coauthor-key"></i>Coautoría</span></div><div class="chart profile-summary-chart"></div><p class="note">Los proyectos con sanción y con registro en sesión pueden coincidir.</p>';
+  const width=Math.max(260,root.clientWidth),left=0,right=48,height=300;
+  const x=d3.scaleLinear().domain([0,s.author+s.coauthor||1]).range([left,width-right]);
+  const description=rows.map(r=>`${r.label}: ${fmt(r.author+r.coauthor)}; ${fmt(r.author)} autorías y ${fmt(r.coauthor)} coautorías`).join('. ');
+  const svg=figureSvg('#profile-metrics .chart',width,height,description);
+  rows.forEach((r,i)=>{
+    const y=28+i*82,total=r.author+r.coauthor;
+    svg.append('text').attr('class','summary-label').attr('x',0).attr('y',y-10).text(r.label);
+    let offset=0;
+    for(const [key,color] of [['author','#245d78'],['coauthor','#c3d4dc']]){
+      const segmentWidth=x(r[key]);
+      svg.append('rect').attr('x',x(offset)).attr('y',y).attr('width',segmentWidth).attr('height',32).attr('fill',color).append('title').text(`${key==='author'?'Autoría':'Coautoría'}: ${fmt(r[key])}`);
+      if(segmentWidth>28)svg.append('text').attr('class','summary-count').attr('x',x(offset)+segmentWidth/2).attr('y',y+21).attr('text-anchor','middle').style('fill',key==='author'?'#fff':'#202726').text(fmt(r[key]));
+      offset+=r[key];
+    }
+    svg.append('text').attr('class','summary-total').attr('x',x(total)+8).attr('y',y+21).text(fmt(total));
+    if(x(r.author)<=28||x(r.coauthor)<=28)svg.append('text').attr('x',0).attr('y',y+48).text(`${fmt(r.author)} autorías · ${fmt(r.coauthor)} coautorías`);
+  });
+  svg.append('g').attr('class','axis').attr('transform','translate(0,278)').call(d3.axisBottom(x).ticks(width<450?3:6).tickFormat(fmt));
+}
 function categoriesChart(target,rows,profile=false){
   const width=Math.max(260,$(target).clientWidth),height=profile?300:260,left=width<380?126:157,right=42,top=16;
   const max=d3.max(rows,r=>profile?Math.max(r.author,r.coauthor):r.value)||1;
@@ -103,7 +130,7 @@ function renderProfile(){
   const p=peopleById.get(personId);if(!p){$('#profile-heading').innerHTML='<p class="empty">Ficha no disponible. Volvé al listado.</p>';$('#profile-metrics').innerHTML='';$('#profile-types').innerHTML='';$('#profile-partners').innerHTML='';$('#profile-projects').innerHTML='';return;}
   const s=stats.get(p.id);
   $('#profile-heading').innerHTML=`<span class="avatar" aria-hidden="true" style="border-left:5px solid ${group(p).color}">${esc(initials(p.nombre))}</span><div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${dateFmt(p.mandato_actual.desde)} — ${dateFmt(p.mandato_actual.hasta)}</p>`:''}<details class="block-history"><summary>Historial de bloques</summary><ul>${p.bloques_historia.map(b=>`<li>${esc(b.bloque)} · ${dateFmt(b.desde)} — ${b.hasta?dateFmt(b.hasta):'sin fecha de fin'}</li>`).join('')}</ul></details></div><a class="text-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
-  $('#profile-metrics').innerHTML=metric(s.author,'Proyectos como autor/a','Firma principal')+metric(s.coauthor,'Proyectos como coautor/a','Sin contar sus autorías')+metric(s.sanction,'Con sanción',`${fmt(s.authored.filter(p=>p.sancion).length)} autorías · ${fmt(s.coauthored.filter(p=>p.sancion).length)} coautorías`)+metric(s.session,'Con registro en sesión',`${fmt(s.authored.filter(p=>p.sesiones.length).length)} autorías · ${fmt(s.coauthored.filter(p=>p.sesiones.length).length)} coautorías`);
+  profileMetricsChart(s);
   categoriesChart('#profile-types',s.types,true);
   const collabs=partners(selected,p.id,visiblePeople).slice(0,10);
   $('#profile-partners').innerHTML=collabs.length?collabs.map(c=>`<a class="profile-partner" href="#ficha/${c.id}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></a>`).join(''):'<p class="empty">Sin proyectos compartidos.</p>';

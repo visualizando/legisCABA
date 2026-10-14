@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Explorá proyectos, autorías, sanciones y redes de colaboración en la Legislatura de la Ciudad de Buenos Aires desde diciembre de 2023.">
+  <meta name="description" content="Proyectos y coautorías de la Legislatura porteña desde diciembre de 2023.">
   <title>LegisCABA — Monitor parlamentario</title>
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
+  <link rel="stylesheet" href="assets/compact.css">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261014-bloques-otros"></script>
+  <script type="module" src="assets/app.mjs?v=20261014-texto-minimo"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -18,21 +19,21 @@
   <div class="masthead-note">OBSERVATORIO PARLAMENTARIO<br><span>Ciudad de Buenos Aires</span></div>
   <span class="edition">Ciclo iniciado el 10.12.2023</span>
 </header>
-<div class="navline"><nav class="wrap" aria-label="Secciones"><a href="#panorama">Panorama</a><a href="#legisladores">Legisladores</a><a href="#proyectos">Proyectos</a><a href="#red">Red de coautorías <span class="small-tag">LAB</span></a><a href="#metodologia">Cómo leer los datos</a></nav></div>
+<div class="navline"><nav class="wrap" aria-label="Secciones"><a href="#panorama">Panorama</a><a href="#legisladores">Legisladores</a><a href="#proyectos">Proyectos</a><a href="#red">Coautorías</a><a href="#metodologia">Metodología</a></nav></div>
 <main id="contenido" class="wrap" tabindex="-1">
-  <div id="load-state" role="status" class="loading">Cargando la actividad parlamentaria…</div>
-  <noscript>Activá JavaScript para explorar los proyectos y sus visualizaciones.</noscript>
+  <div id="load-state" role="status" class="loading">Cargando datos…</div>
+  <noscript>Se necesita JavaScript para ver los datos.</noscript>
   <div id="app" hidden>
-    <section class="hero" id="page-intro"><div><p class="eyebrow" id="eyebrow">LA ACTIVIDAD, EN DATOS</p><h1 id="page-title">Qué se propone.<br>Quiénes lo impulsan.</h1><p class="intro" id="page-description">Una mirada a los proyectos y las colaboraciones de la Legislatura porteña. Explorá el recorrido de cada iniciativa, desde su presentación.</p></div><div class="hero-aside"><span class="status-dot" aria-hidden="true"></span> Datos públicos · fuente oficial<br><span id="date-range"></span><br><span id="updated"></span></div></section>
+    <section class="hero" id="page-intro"><div><p class="eyebrow" id="eyebrow"></p><h1 id="page-title">Panorama</h1><p class="intro" id="page-description"></p></div><div class="hero-aside"><span class="status-dot" aria-hidden="true"></span> Fuente: Legislatura<br><span id="date-range"></span><br><span id="updated"></span></div></section>
     <form class="filters" id="global-filters" aria-label="Filtrar la actividad"><label>Presentados en<select id="year"><option value="all">Todo el ciclo</option></select></label><label>Tipo de proyecto<select id="category"><option value="all">Todos los tipos</option><option value="ley">Proyectos de ley</option><option value="informes">Pedidos de informes*</option><option value="declaracion">Declaraciones</option><option value="resolucion">Otras resoluciones</option></select></label><button type="button" id="reset-filters" class="quiet">Restablecer filtros ↺</button><p id="filter-count" role="status"></p></form>
 
     <section id="view-panorama" class="view">
       <div class="metrics" id="overview-metrics"></div>
-      <div class="section-heading"><div><p class="eyebrow">01 / QUÉ SE PRESENTA</p><h2>Distintas iniciativas, distintos alcances</h2></div><p>Los pedidos de informes se distinguen dentro de las resoluciones a partir del sumario.*</p></div>
-      <div class="two-charts"><figure><figcaption><h3>La composición de los proyectos</h3><p>Cantidad por categoría · proyectos únicos</p></figcaption><div id="type-chart" class="chart"></div><div id="type-chart-table" class="chart-data"></div></figure><figure><figcaption><h3>El ritmo de las presentaciones</h3><p>Proyectos por mes · el último mes puede estar incompleto</p></figcaption><div id="monthly-chart" class="chart"></div><div class="legend" id="type-legend"></div></figure></div>
-      <div class="section-heading"><div><p class="eyebrow">02 / QUIÉNES IMPULSAN</p><h2>Las autorías, legislador por legislador</h2></div><a href="#legisladores" class="text-link">Explorar todas las fichas ↗</a></div>
-      <p class="note">Las diez mayores cantidades de autorías en la selección. El volumen de presentaciones no mide su calidad ni su impacto.</p><div id="ranking" class="ranking"></div>
-      <div class="method-note"><strong>Una lectura con contexto.</strong> “Con sanción” es el indicador oficial del expediente. “Con registro en sesión” señala su presencia en asuntos considerados; no mide debate individual. <a href="#metodologia">Ver criterios y cobertura ↗</a></div>
+      <div class="section-heading"><div><h2>Proyectos</h2></div><p>Informes*: clasificación por sumario.</p></div>
+      <div class="two-charts"><figure><figcaption><h3>Por tipo</h3><p>Proyectos únicos</p></figcaption><div id="type-chart" class="chart"></div><div id="type-chart-table" class="chart-data"></div></figure><figure><figcaption><h3>Por mes</h3><p>Último mes parcial</p></figcaption><div id="monthly-chart" class="chart"></div><div class="legend" id="type-legend"></div></figure></div>
+      <div class="section-heading"><div><h2>Autorías</h2></div><a href="#legisladores" class="text-link">Ver legisladores ↗</a></div>
+      <p class="note">Diez mayores cantidades de autorías.</p><div id="ranking" class="ranking"></div>
+      <div class="method-note">Sanción y sesión: registros oficiales. <a href="#metodologia">Ver definiciones</a>.</div>
     </section>
 
     <section id="view-legisladores" class="view" hidden>
@@ -41,8 +42,8 @@
 
     <section id="view-ficha" class="view" hidden>
       <a href="#legisladores" class="text-link">← Volver a legisladores</a><div class="profile-heading" id="profile-heading"></div><div id="profile-metrics" class="metrics"></div>
-      <div class="two-charts"><figure><figcaption><h2>Las iniciativas que firma</h2><p>Autoría y coautoría por categoría · cantidades separadas</p></figcaption><div id="profile-types" class="chart"></div></figure><figure><figcaption><h2>Con quiénes comparte proyectos</h2><p>Diez colaboraciones más frecuentes · proyectos firmados en común</p></figcaption><div id="profile-partners"></div></figure></div>
-      <div class="section-heading"><div><p class="eyebrow">EL RECORRIDO DE LOS PROYECTOS</p><h2>Proyectos en los que participa</h2></div><label>Participación<select id="profile-role"><option value="all">Todas sus firmas</option><option value="author">Como autor/a</option><option value="coauthor">Como coautor/a</option></select></label></div><div id="profile-projects"></div>
+      <div class="two-charts"><figure><figcaption><h2>Por tipo</h2><p>Autorías y coautorías</p></figcaption><div id="profile-types" class="chart"></div></figure><figure><figcaption><h2>Cofirmantes frecuentes</h2><p>Proyectos compartidos</p></figcaption><div id="profile-partners"></div></figure></div>
+      <div class="section-heading"><div><h2>Proyectos firmados</h2></div><label>Participación<select id="profile-role"><option value="all">Todas sus firmas</option><option value="author">Como autor/a</option><option value="coauthor">Como coautor/a</option></select></label></div><div id="profile-projects"></div>
     </section>
 
     <section id="view-proyectos" class="view" hidden>
@@ -51,21 +52,20 @@
 
     <section id="view-red" class="view" hidden>
       <div class="network-controls"><label>Vínculo mínimo<select id="edge-min"><option value="5">5 proyectos compartidos</option><option value="15" selected>15 proyectos compartidos</option><option value="30">30 proyectos compartidos</option><option value="60">60 proyectos compartidos</option></select></label><label>Modelo de vínculo<select id="edge-mode"><option value="all">Todas las firmas entre sí</option><option value="author">Autor/a con coautores</option></select></label><button type="button" id="network-reset" class="quiet">Centrar red ↺</button><div class="zoom-buttons"><button type="button" id="zoom-in" aria-label="Acercar red">+</button><button type="button" id="zoom-out" aria-label="Alejar red">−</button></div></div>
-      <p class="note">El tamaño del nodo refleja proyectos firmados; el grosor del vínculo, proyectos en común. El color destaca los bloques vigentes con más de una banca; los monobloques se agrupan en “Otros”. Los bloques históricos sin color publicado se distinguen en gris claro. El filtro de tipo permite comparar leyes, informes y declaraciones. La cercanía es una disposición visual, no una medida de afinidad política.</p><div class="network-layout"><div class="network-canvas"><div id="network-stats" class="network-stats"></div><svg id="network" aria-label="Red de proyectos compartidos; seleccionar un nodo para explorar sus conexiones"></svg><div id="network-legend" class="legend"></div></div><aside class="network-detail" id="network-detail" aria-live="polite"></aside></div>
-      <details class="network-table"><summary>Explorar conexiones en una tabla</summary><div id="edge-table"></div></details>
+      <p class="note">Nodo: proyectos firmados. Vínculo: proyectos compartidos. Color: bloque.</p><div class="network-layout"><div class="network-canvas"><div id="network-stats" class="network-stats"></div><svg id="network" aria-label="Red de proyectos compartidos; seleccionar un nodo para explorar sus conexiones"></svg><div id="network-legend" class="legend"></div></div><aside class="network-detail" id="network-detail" aria-live="polite"></aside></div>
+      <details class="network-table"><summary>Ver conexiones en tabla</summary><div id="edge-table"></div></details>
     </section>
 
     <section id="view-metodologia" class="view reading" hidden>
-      <h2>Qué cuenta este monitor</h2><p>Proyectos de ley, resolución y declaración presentados desde el 10 de diciembre de 2023. Cada expediente se cuenta una vez en el panorama; en las fichas se acredita una firma a cada participante. Incluye legisladores que participaron en distintas composiciones de la Cámara durante el período.</p>
-      <h2>Autoría y coautoría</h2><p>La fuente identifica un autor principal y una lista de coautores. Se deduplican las firmas dentro de cada proyecto. El padrón histórico oficial permite identificar legisladores y separarlos de autores institucionales. Los proyectos institucionales permanecen en el panorama y el buscador.</p><p>El filtro “Presentados en” usa el año calendario de la fecha de presentación. Puede diferir del año parlamentario del número de expediente: algunas iniciativas presentadas en enero o febrero de 2026 llevan número de 2025.</p>
-      <h2>Pedidos de informes: una clasificación aproximada</h2><p>La categoría oficial es “Resolución”. Este monitor distingue pedidos de informes cuando el comienzo del sumario menciona informes o un pedido explícito de ellos. Los demás quedan en “Otras resoluciones”. Es una regla automática conservadora: puede omitir pedidos o incluir casos que requieran revisión. El tipo oficial y el sumario completo siempre están disponibles en cada expediente.</p>
-      <h2>Registro en sesión y sanción</h2><p>“Con registro en sesión” significa que el expediente aparece, con su ID, en los asuntos considerados de al menos una sesión consultada. Puede corresponder a sanción, giro, archivo u otra actuación. No acredita discusión individual ni permite medir duración del debate. La ausencia de registro no demuestra que nunca fue tratado; puede haber omisiones o tratamiento a través de un expediente cabeza.</p><p>“Con sanción” reproduce el indicador oficial <code>TieneSancion</code>. No certifica promulgación, vigencia o ausencia de veto, ni distingue por sí solo sanción inicial de definitiva. Por eso no lo presentamos como “ley vigente”. Los estados y actuaciones oficiales se muestran en los detalles.</p>
-      <h2>Cómo se construye la red</h2><p>En “Todas las firmas entre sí”, dos legisladores están conectados si firman un mismo proyecto, ya sea como autor o coautor. Un proyecto con cinco firmantes genera diez pares; cada par recibe una unidad. En “Autor/a con coautores” solo se crean vínculos entre el autor y cada coautor. Se excluyen participantes que no se identifican en el padrón de legisladores.</p><p>Los filtros de tipo y año se aplican antes de calcular los vínculos. El umbral oculta relaciones menos frecuentes y nodos sin conexiones visibles. El color identifica el bloque oficial del legislador; las conexiones pueden combinar distintos tipos de proyecto. La posición de los nodos se calcula por conexiones, sin agruparlos por bloque ni inferir alianzas.</p>
-      <h2>Bloques y mandatos</h2><p>La composición actual, los bloques vigentes y las fechas de mandato proceden del servicio que alimenta la <a href="https://www.legislatura.gob.ar/seccion/composicion-actual.html" target="_blank" rel="noopener">página oficial de Composición Actual ↗</a>. Se actualizan con cada ejecución programada.</p><p>Cada legislador se identifica por su bloque actual o su último bloque conocido dentro del ciclo. Si solo hay datos previos, se indica esa limitación. Las fichas muestran los períodos de pertenencia que devuelve la fuente oficial.</p><p>Los nombres y colores de los bloques provienen del catálogo oficial, sin clasificación ideológica. La leyenda destaca los bloques vigentes con más de una banca y agrupa los monobloques en “Otros”, manteniendo sus nombres específicos en las fichas y detalles de la red. Para los bloques históricos que no aparecen en el catálogo vigente se conserva el nombre oficial y se usa gris, sin asignarles el color de otro bloque. La fuente de composición actual no informa el partido individual de cada legislador, por lo que no se infiere una afiliación partidaria distinta de su bloque.</p><p>El color identifica al legislador según su bloque de referencia; no atribuye retrospectivamente ese bloque a cada firma ni reconstruye alianzas de cada sesión. El monitor compara cantidades sin ajustar por tiempo en el cargo.</p><div id="group-mapping"></div>
-      <h2>Fuente y actualización</h2><p id="coverage-note"></p><p>Los datos proceden de los servicios públicos del <a href="https://parlamentaria.legislatura.gob.ar/pages/ExpedienteBusqueda.aspx" target="_blank" rel="noopener">Sistema de Consultas Parlamentarias de la Legislatura ↗</a>. Se conservan enlaces a cada expediente. Este es un proyecto independiente, sin afiliación institucional.</p><a href="data/monitor.json" download class="download-link">Descargar los datos del monitor ↓</a>
+      <h2>Cobertura</h2><p id="coverage-note"></p><p>Proyectos de ley, resolución y declaración. Se cuentan expedientes únicos; las fichas separan autorías y coautorías. El año corresponde a la presentación, no al número de expediente.</p>
+      <h2>Informes*</h2><p>Resoluciones identificadas por el inicio del sumario. Clasificación automática, sujeta a errores. El detalle conserva el tipo oficial.</p>
+      <h2>Sanción y sesión</h2><p>Sanción: indicador oficial del expediente; puede ser inicial y no acredita vigencia. Sesión: presencia en asuntos considerados, no debate individual. La falta de registro no descarta tratamiento.</p>
+      <h2>Coautorías</h2><p>Cada vínculo cuenta proyectos compartidos. El modo autor–coautor excluye pares entre coautores. Los filtros se aplican antes del cálculo. La posición de los nodos no mide afinidad política.</p>
+      <h2>Bloques</h2><p>Nombres y colores oficiales. Monobloques: “Otros”. Bloques históricos sin color disponible: gris claro. Se usa el bloque actual o último conocido; no se atribuye a todas las firmas pasadas.</p><p>La <a href="https://www.legislatura.gob.ar/seccion/composicion-actual.html" target="_blank" rel="noopener">composición actual</a> informa bloques y mandatos, no partido individual. Las cantidades no se ajustan por tiempo en el cargo.</p><div id="group-mapping"></div>
+      <h2>Fuente</h2><p><a href="https://parlamentaria.legislatura.gob.ar/pages/ExpedienteBusqueda.aspx" target="_blank" rel="noopener">Consultas Parlamentarias de la Legislatura ↗</a>. Actualización diaria. Monitor independiente.</p><a href="data/monitor.json" download class="download-link">Descargar datos ↓</a>
     </section>
   </div>
 </main>
-<footer class="wrap"><a class="brand small" href="#panorama">LegisCABA</a><p>Una herramienta independiente para leer la actividad legislativa.<br>Fuente: Legislatura de la Ciudad Autónoma de Buenos Aires.</p><a href="#metodologia">Datos y metodología ↗</a></footer>
+<footer class="wrap"><a class="brand small" href="#panorama">LegisCABA</a><p>Fuente: Legislatura de la Ciudad de Buenos Aires.</p><a href="#metodologia">Metodología ↗</a></footer>
 </body>
 </html>

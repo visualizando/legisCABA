@@ -175,7 +175,7 @@ function blockTimeline(person){
 function renderProfile(){
   const p=peopleById.get(personId);if(!p){$('#profile-heading').innerHTML='<p class="empty">Ficha no disponible. Volvé al listado.</p>';$('#profile-metrics').innerHTML='';$('#profile-types').innerHTML='';$('#profile-partners').innerHTML='';$('#profile-projects').innerHTML='';return;}
   const s=stats.get(p.id);
-  $('#profile-heading').innerHTML=`${avatar(p,true)}<div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${p.mandato_actual.desde.slice(0,4)}–${p.mandato_actual.hasta.slice(0,4)}</p>`:''}${blockTimeline(p)}</div><a class="text-link action-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
+  $('#profile-heading').innerHTML=`<div class="profile-block-band" style="--group:${group(p).color};color:${p.grupo_visual==='otros'?'#202726':'#fffdf4'}">${esc(p.bloque_referencia)}<span class="card-space">${esc(group(p).nombre)}</span></div>${avatar(p,true)}<div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${p.mandato_actual.desde.slice(0,4)}–${p.mandato_actual.hasta.slice(0,4)}</p>`:''}${blockTimeline(p)}</div><a class="text-link action-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
   portraitFallbacks();
   profileMetricsChart(s);
   profileTypesChart('#profile-types',s.types);

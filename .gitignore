@@ -1,0 +1,11 @@
+__pycache__/
+*.tmp
+data/backfill/
+data/enrichment/
+.local/
+experiments/*
+!experiments/RESULTADOS.md
+data/expedientes.json
+data/proyectos.json
+data/legiscaba.sqlite
+site/data/monitor.json

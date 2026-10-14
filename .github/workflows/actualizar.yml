@@ -1,0 +1,53 @@
+name: Actualizar expedientes
+on:
+  schedule:
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+    inputs:
+      years:
+        description: Años a actualizar, separados por espacios (vacío = año actual y anterior)
+        required: false
+permissions:
+  contents: write
+concurrency:
+  group: actualizar-expedientes
+  cancel-in-progress: false
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -v
+      - run: python tools/package_data.py unpack
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Consultar años
+        env:
+          REQUESTED_YEARS: ${{ inputs.years }}
+        run: |
+          python - <<'PY'
+          import datetime, os, subprocess
+          current = datetime.date.today().year
+          years = os.environ.get('REQUESTED_YEARS', '').split() or [str(current-1), str(current)]
+          years = [str(int(y)) for y in years]
+          subprocess.run(['python', 'scraper.py', '--years', *years], check=True)
+          PY
+      - name: Regenerar datos del micrositio
+        run: |
+          python prepare_site.py --refresh
+          node --test tests/model.test.mjs
+          python tools/package_data.py pack
+      - name: Guardar datos
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/ site/data/
+          if ! git diff --cached --quiet; then
+            git commit -m 'Actualizar datos parlamentarios'
+            git push
+          fi

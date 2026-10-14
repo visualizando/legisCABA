@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfExpedienteAvanzado xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://tempuri.org/">
+  <expedienteAvanzado>
+    <id_expediente>139330</id_expediente>
+    <nro_de_expediente>1-D-2026</nro_de_expediente>
+    <fch_inicio>2/3/2026 10:02:31</fch_inicio>
+    <autor_des>NEIRA, CLAUDIA</autor_des>
+    <coautores_des>FERREÑO, CLAUDIO AMÉRICO; LA BLUNDA, ANDRÉS; NEGRI, CLAUDIA</coautores_des>
+    <autor_id>30716</autor_id>
+    <coautores_id>30561; 30918; 30936</coautores_id>
+    <tipo_proyecto_des>DECLARACION</tipo_proyecto_des>
+    <fch_movimiento>5/8/2026 13:28:56</fch_movimiento>
+    <ubicacion_des>ARCHIVO</ubicacion_des>
+    <descripcion>EXPEDIENTE EN ARCHIVO CON DATOS BANK INGRESADOS</descripcion>
+    <id_proyecto_tipo>3</id_proyecto_tipo>
+    <id_business_party>169</id_business_party>
+    <nro_de_orden_JefeGob />
+    <TieneSancion>1</TieneSancion>
+    <TieneDigitalizacion>0</TieneDigitalizacion>
+    <fch_antecedente />
+    <fecha_insert_antecedente />
+    <fecha_update_antecedente />
+    <iddocumento_antecedente />
+    <TieneEstadoParlamentario />
+    <sumario>CONMEMÓRASE EL 32° ANIVERSARIO DEL ATENTADO TERRORISTA A LA ASOCIACIÓN MUTUAL ISRAELITA ARGENTINA (AMIA). RÍNDESE HOMENAJE A LAS VÍCTIMAS DEL HECHO.-</sumario>
+    <urlDoc>221731</urlDoc>
+  </expedienteAvanzado>
+</ArrayOfExpedienteAvanzado>

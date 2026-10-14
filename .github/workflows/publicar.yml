@@ -1,0 +1,34 @@
+name: Publicar micrositio en GitHub Pages
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ['Actualizar expedientes']
+    types: [completed]
+  push:
+    paths:
+      - 'site/**'
+      - '.github/workflows/publicar.yml'
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  publicar:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Preparar datos estáticos
+        run: python tools/package_data.py unpack
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
+        id: deployment

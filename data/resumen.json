@@ -1,0 +1,30 @@
+{
+  "desde": "2023-12-10",
+  "hasta": "2026-10-14",
+  "expedientes": 10425,
+  "proyectos": 9175,
+  "por_tipo": {
+    "LEY": 2206,
+    "INTERNO": 25,
+    "HACE CONSIDERACIONES": 438,
+    "REMITE ACTUACIONES": 569,
+    "DECLARACION": 4331,
+    "RESOLUCION": 2638,
+    "ESCUELAS": 218
+  },
+  "expedientes_por_anio_presentacion": {
+    "2023": 55,
+    "2024": 3742,
+    "2025": 3343,
+    "2026": 3285
+  },
+  "proyectos_por_anio_presentacion": {
+    "2023": 27,
+    "2024": 3368,
+    "2025": 2921,
+    "2026": 2859
+  },
+  "autores_distintos": 102,
+  "ventanas": 35,
+  "verificacion_local": "OK"
+}

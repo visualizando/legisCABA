@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="assets/official-blocks.css">
   <link rel="stylesheet" href="assets/compact.css?v=20261014-fichero">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261014-fichero"></script>
+  <script type="module" src="assets/app.mjs?v=20261014-actuales"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -25,7 +25,7 @@
   <noscript>Se necesita JavaScript para ver los datos.</noscript>
   <div id="app" hidden>
     <section class="hero" id="page-intro"><div><p class="eyebrow" id="eyebrow"></p><h1 id="page-title">Panorama</h1><p class="intro" id="page-description"></p></div><div class="hero-aside"><span class="status-dot" aria-hidden="true"></span> Fuente: Legislatura<br><span id="date-range"></span><br><span id="updated"></span></div></section>
-    <form class="filters" id="global-filters" aria-label="Filtrar la actividad"><label>Presentados en<select id="year"><option value="all">Todo el ciclo</option></select></label><label>Tipo de proyecto<select id="category"><option value="all">Todos los tipos</option><option value="ley">Proyectos de ley</option><option value="informes">Pedidos de informes*</option><option value="declaracion">Declaraciones</option><option value="resolucion">Otras resoluciones</option></select></label><label class="check"><input id="active-only" type="checkbox"> Solo legisladores actuales</label><button type="button" id="reset-filters" class="quiet">Restablecer filtros ↺</button><p id="filter-count" role="status"></p></form>
+    <form class="filters" id="global-filters" aria-label="Filtrar la actividad"><label>Presentados en<select id="year"><option value="all">Todo el ciclo</option></select></label><label>Tipo de proyecto<select id="category"><option value="all">Todos los tipos</option><option value="ley">Proyectos de ley</option><option value="informes">Pedidos de informes*</option><option value="declaracion">Declaraciones</option><option value="resolucion">Otras resoluciones</option></select></label><label class="check"><input id="active-only" type="checkbox" checked> Solo legisladores actuales</label><button type="button" id="reset-filters" class="quiet">Restablecer filtros ↺</button><p id="filter-count" role="status"></p></form>
 
     <section id="view-panorama" class="view">
       <div class="metrics" id="overview-metrics"></div>

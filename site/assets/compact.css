@@ -57,4 +57,4 @@
 
 #profile-partners .profile-partner{padding-block:8px;font-size:12px}#profile-partners .profile-partner>span:first-child{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}#profile-partners .partner-political{display:inline;margin:0}#view-ficha .two-charts figcaption{margin-bottom:14px}
 
-#profile-partners .profile-partner{position:relative;border-bottom:0;padding-bottom:12px;margin-bottom:4px}#profile-partners .profile-partner::after{content:"";position:absolute;bottom:0;left:0;width:var(--shared-width);height:4px;background:#285f73;border-radius:2px}
+#profile-partners .profile-partner{position:relative;border-bottom:0;padding-top:0;padding-bottom:6px;margin-bottom:16px}#profile-partners .profile-partner::after{content:"";position:absolute;bottom:0;left:0;width:var(--shared-width);height:4px;background:var(--shared-color);border-radius:2px}

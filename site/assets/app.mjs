@@ -188,7 +188,7 @@ function renderProfile(){
   profileMetricsChart(s);
   profileTypesChart('#profile-types',s.types,s);
   const collabs=partners(selected,p.id,visiblePeople).slice(0,5);
-  $('#profile-partners').innerHTML=collabs.length?collabs.map(c=>`<a class="profile-partner" style="--shared-width:${100*c.value/collabs[0].value}%" href="#ficha/${c.id}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></a>`).join(''):'<p class="empty">Sin proyectos compartidos.</p>';
+  $('#profile-partners').innerHTML=collabs.length?collabs.map(c=>`<a class="profile-partner" style="--shared-width:${100*c.value/collabs[0].value}%;--shared-color:${group(c).color}" href="#ficha/${c.id}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></a>`).join(''):'<p class="empty">Sin proyectos compartidos.</p>';
   const status=$('#profile-status'),previous=status.value;
   status.innerHTML='<option value="all">Todos los estados</option>'+[...new Set(s.signed.map(p=>p.estado))].sort().map(value=>`<option value="${esc(value)}">${esc(value.toLocaleLowerCase('es-AR'))}</option>`).join('');
   status.value=[...status.options].some(o=>o.value===previous)?previous:'all';

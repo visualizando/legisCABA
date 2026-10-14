@@ -120,16 +120,24 @@ function renderOverview(){
   const ranking=[...visiblePeople].sort((a,b)=>stats.get(b.id).author-stats.get(a.id).author||a.nombre.localeCompare(b.nombre,'es')).filter(p=>stats.get(p.id).author>0).slice(0,10),max=stats.get(ranking[0]?.id)?.author||1;
   $('#ranking').innerHTML=ranking.length?ranking.map((p,i)=>`<a class="rank-row" href="#ficha/${p.id}"><span class="rank-num">${String(i+1).padStart(2,'0')}</span><span class="rank-main">${esc(displayName(p.nombre))}<span class="rank-political">${groupBadge(p)}</span><span class="rank-bar" aria-hidden="true"><i style="width:${stats.get(p.id).author/max*100}%;background:${group(p).color}"></i></span></span><span class="rank-value">${fmt(stats.get(p.id).author)}</span></a>`).join(''):'<p class="empty">Sin autorías. Cambiá los filtros.</p>';
 }
+function monthlySpark(projects,role){
+  const months=[];let month=dataset.desde.slice(0,7);
+  while(month<=dataset.hasta.slice(0,7)){months.push(month);const [y,m]=month.split('-').map(Number);month=`${m===12?y+1:y}-${String(m===12?1:m+1).padStart(2,'0')}`;}
+  const counts=new Map(months.map(m=>[m,0]));projects.forEach(p=>counts.set(p.fecha.slice(0,7),(counts.get(p.fecha.slice(0,7))||0)+1));
+  const max=Math.max(1,...counts.values()),width=months.length*3;
+  return `<svg class="monthly-spark" viewBox="0 0 ${width} 28" role="img" aria-label="${role} por mes, ${months[0]} a ${months.at(-1)}"><title>${months.map(m=>`${m}: ${counts.get(m)}`).join('; ')}</title>${months.map((m,i)=>`<rect x="${i*3}" y="${28-counts.get(m)/max*26}" width="2" height="${counts.get(m)/max*26}" fill="currentColor"><title>${m}: ${counts.get(m)} ${role.toLowerCase()}</title></rect>`).join('')}</svg>`;
+}
 function renderPeople(){
   const term=normalize($('#person-search').value),order=$('#person-sort').value;
   const filterGroup=$('#person-group').value;
   const people=visiblePeople.filter(p=>normalize(p.nombre+' '+p.bloque_referencia+' '+group(p).nombre).includes(term)&&(filterGroup==='all'||p.grupo===filterGroup||filterGroup.startsWith('visual:')&&p.grupo_visual===filterGroup.slice(7)));
+  const cardStats=new Map(visiblePeople.map(p=>[p.id,personStats(dataset.proyectos,p.id)]));
   groupLegend('#people-group-legend');
-  people.sort((a,b)=>order==='name'?a.nombre.localeCompare(b.nombre,'es'):stats.get(b.id)[order]-stats.get(a.id)[order]||a.nombre.localeCompare(b.nombre,'es'));
+  people.sort((a,b)=>order==='name'?a.nombre.localeCompare(b.nombre,'es'):cardStats.get(b.id)[order]-cardStats.get(a.id)[order]||a.nombre.localeCompare(b.nombre,'es'));
   $('#person-count').textContent=`${fmt(people.length)} legisladores`;
   $('#person-cards').innerHTML=people.length?people.map(p=>{
-    const s=stats.get(p.id),max=Math.max(1,...s.types.map(t=>t.author+t.coauthor));
-    return `<a class="person-card" href="#ficha/${p.id}" style="--group:${group(p).color}"><div class="card-block-band" style="color:${p.grupo_visual==='izquierda'?'#fff':'#202726'}">${esc(p.bloque_referencia||group(p).nombre)}</div><div class="person-top">${avatar(p)}<div><h2>${esc(displayName(p.nombre))}</h2></div></div><div class="card-numbers"><div><strong>${fmt(s.author)}</strong><span>Autorías</span></div><div><strong>${fmt(s.coauthor)}</strong><span>Coautorías</span></div></div><div class="card-type-bars" title="Autorías y coautorías por tipo">${s.types.map(t=>`<div class="card-type-row"><span>${esc(t.id==='ley'?'Ley':t.id==='informes'?'Informes*':t.id==='declaracion'?'Declaraciones':'Otras resoluciones')}</span><div class="card-bar-track"><div class="card-bar-stack" style="width:${(t.author+t.coauthor)/max*100}%;--cat:${t.color}" title="${fmt(t.author)} autorías · ${fmt(t.coauthor)} coautorías"><i style="width:${t.author/(t.author+t.coauthor||1)*100}%"></i><i class="coauthor-segment" style="width:${t.coauthor/(t.author+t.coauthor||1)*100}%"></i><span class="card-bar-count">${fmt(t.author+t.coauthor)}</span></div></div></div>`).join('')}</div></a>`;
+    const s=cardStats.get(p.id),max=Math.max(1,...s.types.map(t=>t.author+t.coauthor));
+    return `<a class="person-card" href="#ficha/${p.id}" style="--group:${group(p).color}"><div class="card-block-band" style="color:${p.grupo_visual==='otros'?'#202726':'#fffdf4'}">${esc(p.bloque_referencia||group(p).nombre)}</div><div class="person-top">${avatar(p)}<div><h2>${esc(displayName(p.nombre))}</h2></div></div><div class="card-numbers"><div class="card-metric"><div><strong>${fmt(s.author)}</strong><span>Autorías</span></div>${monthlySpark(s.authored,'Autorías')}</div><div class="card-metric"><div><strong>${fmt(s.coauthor)}</strong><span>Coautorías</span></div>${monthlySpark(s.coauthored,'Coautorías')}</div></div><div class="card-type-bars" title="Autorías y coautorías por tipo">${s.types.map(t=>`<div class="card-type-row"><span>${esc(t.id==='ley'?'Ley':t.id==='informes'?'Informes*':t.id==='declaracion'?'Declaraciones':'Otras resoluciones')}</span><div class="card-bar-track"><div class="card-bar-stack" style="width:${(t.author+t.coauthor)/max*100}%;--cat:${t.color}" title="${fmt(t.author)} autorías · ${fmt(t.coauthor)} coautorías"><i style="width:${t.author/(t.author+t.coauthor||1)*100}%"></i><i class="coauthor-segment" style="width:${t.coauthor/(t.author+t.coauthor||1)*100}%"></i><span class="card-bar-count">${fmt(t.author+t.coauthor)}</span></div></div></div>`).join('')}</div></a>`;
   }).join(''):'<p class="empty">Sin resultados. Cambiá los filtros.</p>';
   portraitFallbacks();
 }
@@ -231,7 +239,8 @@ function renderEdgeTable(){
 function render(){
   const copy=viewCopy[route];$('#eyebrow').textContent=copy[0];$('#page-title').innerHTML=copy[1];$('#page-description').textContent=copy[2];$('#page-description').hidden=!copy[2];$('#eyebrow').hidden=!copy[0];
   if(route==='ficha'&&peopleById.has(personId))$('#page-title').textContent=displayName(peopleById.get(personId).nombre);
-  $('.filters').hidden=route==='metodologia';document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='view-'+route);
+  $('.filters').hidden=route==='metodologia'||route==='legisladores';
+  const activeLabel=$('#active-only').closest('label');(route==='legisladores'?$('#people-filters'):$('#global-filters')).append(activeLabel);document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='view-'+route);
   document.querySelectorAll('nav a').forEach(a=>{if(a.hash==='#'+(route==='ficha'?'legisladores':route))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   document.title=route==='panorama'?'LegisCABA — Monitor parlamentario':`${route==='red'?'Red de coautorías':route==='metodologia'?'Cómo leer los datos':route[0].toUpperCase()+route.slice(1)} — LegisCABA`;
   if(route==='panorama')renderOverview();if(route==='legisladores')renderPeople();if(route==='ficha')renderProfile();if(route==='proyectos')renderAllProjects();if(route==='red')renderNetwork();

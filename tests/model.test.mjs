@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {personStats,makeGraph,filterProjects,signers,partners} from '../site/assets/model.mjs';
+import {personStats,makeGraph,filterProjects,signers,partners,filterProfileProjects} from '../site/assets/model.mjs';
 
 const people=['a','b','c'].map(id=>({id,nombre:id}));
 const sample={id:'1',fecha:'2026-03-02',categoria:'ley',autor:{id:'a'},cofirmantes:[{id:'b'},{id:'b'},{id:'a'},{id:'c'}],sancion:true,sesiones:[{},{}]};
@@ -47,4 +47,13 @@ test('La exportación real conserva identidades, fechas y el expediente de contr
   assert.deepEqual(data.grupos_visuales.map(g=>g.color),['#34aad7','#efb118','#c367b3','#e86952','#cb1f00','#b3b3b3']);
   assert.deepEqual(data.grupos_visuales.map(g=>g.nombre),['Peronismo','Pro y aliados','Libertarios','UCR','Izquierda','Otros']);
   assert.ok(data.legisladores.filter(p=>['Unión por la Patria','Fuerza por Buenos Aires'].includes(p.bloque_referencia)).every(p=>p.grupo_visual==='peronismo'));
+});
+
+test('Los filtros de ficha combinan participación, sesión, sanción y estado',()=>{
+  const projects=[{...sample,estado:'EN COMISION'},{...sample,id:'2',autor:{id:'b'},cofirmantes:[{id:'a'}],sancion:false,sesiones:[],estado:'ARCHIVO'}];
+  const stats=personStats(projects,'a');
+  assert.equal(filterProfileProjects(stats,{role:'author',session:'yes',sanction:'yes',status:'EN COMISION'}).length,1);
+  assert.equal(filterProfileProjects(stats,{role:'coauthor',session:'no',sanction:'no'}).length,1);
+  assert.equal(filterProfileProjects(stats,{role:'author',sanction:'no'}).length,0);
+  assert.equal(filterProfileProjects(stats,{status:'ARCHIVO'}).length,1);
 });

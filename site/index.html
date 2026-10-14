@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
-  <link rel="stylesheet" href="assets/compact.css?v=20261014-trayectoria">
+  <link rel="stylesheet" href="assets/compact.css?v=20261014-filtros-ficha">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261014-trayectoria"></script>
+  <script type="module" src="assets/app.mjs?v=20261014-filtros-ficha"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -43,7 +43,15 @@
     <section id="view-ficha" class="view" hidden>
       <a href="#legisladores" class="text-link">← Volver a legisladores</a><div class="profile-heading" id="profile-heading"></div><div id="profile-metrics" class="profile-summary"></div>
       <div class="two-charts"><figure><figcaption><h2>Por tipo</h2><p>Autorías y coautorías</p></figcaption><div id="profile-types" class="chart"></div></figure><figure><figcaption><h2>Cofirmantes frecuentes</h2><p>Proyectos compartidos</p></figcaption><div id="profile-partners"></div></figure></div>
-      <div class="section-heading"><div><h2>Proyectos firmados</h2></div><label>Participación<select id="profile-role"><option value="all">Todas sus firmas</option><option value="author">Como autor/a</option><option value="coauthor">Como coautor/a</option></select></label></div><div id="profile-projects"></div>
+      <div class="section-heading"><h2 id="profile-list-heading" tabindex="-1">Proyectos firmados</h2></div>
+      <div class="section-tools profile-project-filters">
+        <label>Participación<select id="profile-role"><option value="all">Todas sus firmas</option><option value="author">Como autor/a</option><option value="coauthor">Como coautor/a</option></select></label>
+        <label>Registro en sesión<select id="profile-session"><option value="all">Todos</option><option value="yes">Con registro</option><option value="no">Sin registro</option></select></label>
+        <label>Sanción<select id="profile-sanction"><option value="all">Todos</option><option value="yes">Con sanción</option><option value="no">Sin sanción</option></select></label>
+        <label>Estado del expediente<select id="profile-status"><option value="all">Todos los estados</option></select></label>
+        <button id="profile-reset" type="button">Restablecer</button>
+      </div>
+      <div id="profile-projects"></div>
     </section>
 
     <section id="view-proyectos" class="view" hidden>

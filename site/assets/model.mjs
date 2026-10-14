@@ -36,3 +36,8 @@ export function partners(projects,id,people){
   for(const p of projects){const ids=signers(p);if(!ids.includes(id))continue;for(const other of ids)if(other!==id&&known.has(other))counts.set(other,(counts.get(other)||0)+1);}
   return [...counts].map(([id,value])=>({...known.get(id),value})).sort((a,b)=>b.value-a.value||a.nombre.localeCompare(b.nombre,'es'));
 }
+
+export function filterProfileProjects(stats,{role='all',session='all',sanction='all',status='all'}={}){
+  const rows=role==='author'?stats.authored:role==='coauthor'?stats.coauthored:stats.signed;
+  return rows.filter(p=>(session==='all'||Boolean(p.sesiones.length)===(session==='yes'))&&(sanction==='all'||Boolean(p.sancion)===(sanction==='yes'))&&(status==='all'||p.estado===status));
+}

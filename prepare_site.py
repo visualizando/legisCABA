@@ -174,6 +174,7 @@ def main():
         'grupos':sorted(groups.values(),key=lambda b:(not b['vigente'],b['nombre'])),
         'grupos_fuente':COMPOSITION_SOURCE,
         'grupos_visuales':visual_groups,'bloques_por_espacio':visual_blocks,
+        'grupos_visuales_fuente':'Paleta y agrupación definidas para el monitor; no clasificación oficial.',
         'composicion_actual':{'fuente':'https://www.legislatura.gob.ar/seccion/composicion-actual.html',
             'servicio':BASE+'webservices/Json.asmx/GetDiputadosActivosNuevo','total':len(current),
             'consultada':datetime.fromtimestamp((CACHE/'active.xml').stat().st_mtime,timezone.utc).isoformat(),
@@ -181,7 +182,7 @@ def main():
         'metodologia':{'informes':'Heurística sobre el inicio del sumario de resoluciones; no clasificación oficial.',
             'sesion':'Asuntos considerados con ID de expediente; no mide debate individual ni duración.',
             'sancion':'Indicador oficial TieneSancion: no acredita promulgación, vigencia ni ausencia de veto.',
-            'bloques':'Nombres y colores de bloques oficiales de la composición actual. Bloques históricos sin color publicado en gris. La fuente no identifica partido individual; el color no atribuye retrospectivamente un bloque a cada firma.'}}
+            'bloques':'Bloques oficiales conservados; espacios políticos y colores definidos para el monitor. No identifica partido individual ni atribuye retrospectivamente un espacio a cada firma.'}}
     dest=Path('site/data'); dest.mkdir(parents=True,exist_ok=True)
     target=dest/'monitor.json'; temp=target.with_suffix('.tmp')
     temp.write_text(json.dumps(output,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8'); temp.replace(target)

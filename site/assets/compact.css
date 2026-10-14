@@ -72,3 +72,5 @@
 footer.wrap{display:flex;align-items:start;flex-wrap:wrap;gap:24px;justify-content:space-between}footer .footer-identity{max-width:320px}footer .brand.small{font-size:20px;font-weight:400}footer .footer-identity p{margin-top:8px;font-size:11px;line-height:1.5}footer .footer-source{font-size:11px;line-height:1.8}footer .footer-links{display:flex;gap:8px;flex-wrap:wrap}footer .footer-links a{font-size:11px}
 
 #view-ficha .profile-heading>.profile-block-band{width:auto;justify-self:stretch}
+
+#view-ficha .profile-heading .avatar{border:0;border-radius:5px;overflow:hidden}

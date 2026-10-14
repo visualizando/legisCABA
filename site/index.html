@@ -8,9 +8,9 @@
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
-  <link rel="stylesheet" href="assets/compact.css?v=20261014-chart-grouping">
+  <link rel="stylesheet" href="assets/compact.css?v=20261014-profile-blocks">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261014-chart-grouping"></script>
+  <script type="module" src="assets/app.mjs?v=20261014-profile-blocks"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -43,6 +43,8 @@
     <a id="profile-back" href="#legisladores" class="text-link" hidden>← Volver a legisladores</a>
     <section id="view-ficha" class="view" hidden><div class="profile-heading" id="profile-heading"></div><div id="profile-metrics" class="profile-summary"></div>
       <div class="two-charts"><figure><figcaption><h2>Por tipo</h2><p>Autorías y coautorías</p></figcaption><div id="profile-types" class="chart"></div></figure><figure><figcaption><h2>Cofirmantes frecuentes</h2><p>Proyectos compartidos</p></figcaption><div id="profile-partners"></div></figure></div>
+    </section>
+    <section id="profile-project-block" hidden aria-labelledby="profile-list-heading">
       <div class="section-heading"><h2 id="profile-list-heading" tabindex="-1">Proyectos firmados</h2></div>
       <div class="section-tools profile-project-filters">
         <label>Participación<select id="profile-role"><option value="all">Todas sus firmas</option><option value="author">Como autor/a</option><option value="coauthor">Como coautor/a</option></select></label>
@@ -74,6 +76,6 @@
     </section>
   </div>
 </main>
-<footer class="wrap"><a class="brand small" href="#panorama">LegisCABA</a><div class="footer-source"><span class="status-dot" aria-hidden="true"></span> Fuente: Legislatura<br><span id="date-range"></span><br><span id="updated"></span></div><a href="#metodologia">Metodología ↗</a></footer>
+<footer class="wrap"><div class="footer-identity"><a class="brand small" href="#panorama">¿En qué anda LegisCABA?</a><p>Monitoreo de la legislatura de la Ciudad de Buenos Aires</p><p>Por Andrés Snitcofsky</p></div><div class="footer-source">Fuente: Legislatura de la Ciudad de Buenos Aires<br><span id="date-range"></span><br><span id="updated"></span></div><div class="footer-links"><a class="action-link" href="https://github.com/visualizando/legisCABA" target="_blank" rel="noopener">GitHub ↗</a><a class="action-link" href="#metodologia">Metodología ↗</a></div></footer>
 </body>
 </html>

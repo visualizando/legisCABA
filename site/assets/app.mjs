@@ -210,7 +210,7 @@ function projectHtml(p){
   return `<article class="project-item project-card${!p.sancion&&!p.sesiones.length&&!/rechazad[oa]/i.test(p.estado)?' project-unrecorded':''}" style="--project-color:${c.color}"><div class="project-band"><span>${typeLabel}</span><span class="project-result">${result}</span></div><div class="project-card-body"><h3>${esc(p.sumario)}</h3><div class="project-date"><time datetime="${p.fecha}">${dateFmt(p.fecha)}</time><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.numero)} ↗</a></div><div class="project-signatures"><p><span class="signature-label">Autoría</span>${groupedSignatures([p.autor])}</p><p><span class="signature-label">Coautorías</span>${p.cofirmantes.length?groupedSignatures(p.cofirmantes):'Sin cofirmantes registrados'}</p></div><div class="project-details"><p><span aria-hidden="true">▤</span> <strong>Tipo oficial:</strong> ${esc(p.tipo_oficial)}${p.categoria==='informes'?' · Pedido de informes identificado por el sumario.':''}</p><p><span aria-hidden="true">◷</span> <strong>Estado:</strong> ${esc(p.estado)}<br><span aria-hidden="true">⌖</span> <strong>Ubicación:</strong> ${esc(({MEP:'Mesa de Entradas Parlamentaria',DGDP:'Dirección General de Despacho Parlamentario'})[p.ubicacion]||p.ubicacion)}</p><p><span aria-hidden="true">☷</span> <strong>Actuaciones en sesión:</strong>${p.sesiones.length?' </p>'+ses:' Sin registro en las sesiones consultadas.</p>'}<p class="project-actions"><a href="${esc(p.url)}" target="_blank" rel="noopener">Expediente oficial ↗</a>${p.documento?` <a href="${esc(p.documento)}" target="_blank" rel="noopener">Abrir documento ↗</a>`:''}</p></div></div></article>`;
 }
 function renderProjects(target,rows,key){
-  const sorted=[...rows].sort((a,b)=>b.fecha.localeCompare(a.fecha)||Number(b.id)-Number(a.id)),size=20;
+  const sorted=[...rows].sort((a,b)=>b.fecha.localeCompare(a.fecha)||Number(b.id)-Number(a.id)),size=key==='profile'?10:20;
   const pages=Math.max(1,Math.ceil(rows.length/size));pagination[key]=Math.min(pagination[key],pages-1);
   const page=pagination[key],offset=page*size;
   $(target).innerHTML=`<div class="project-toolbar"><p>${fmt(rows.length)} proyecto${rows.length===1?'':'s'}${rows.length?` · ${fmt(offset+1)}–${fmt(Math.min(rows.length,offset+size))}`:''}</p><div class="pagination"><button type="button" data-page="prev" ${page===0?'disabled':''} aria-label="Página anterior">←</button><span>${page+1} / ${pages}</span><button type="button" data-page="next" ${page===pages-1?'disabled':''} aria-label="Página siguiente">→</button></div></div><div class="project-list">${sorted.slice(offset,offset+size).map(projectHtml).join('')||'<p class="empty">Sin resultados. Cambiá la búsqueda o los filtros.</p>'}</div>`;
@@ -272,6 +272,7 @@ function renderEdgeTable(){
 }
 function render(){
   $('#profile-back').hidden=route!=='ficha';
+  $('#profile-project-block').hidden=route!=='ficha';
   $('#page-intro').classList.add('sr-only');
   const copy=viewCopy[route];$('#eyebrow').textContent=copy[0];$('#page-title').innerHTML=copy[1];$('#page-description').textContent=copy[2];$('#page-description').hidden=!copy[2];$('#eyebrow').hidden=!copy[0];
   if(route==='ficha'&&peopleById.has(personId))$('#page-title').textContent=displayName(peopleById.get(personId).nombre);

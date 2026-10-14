@@ -125,6 +125,22 @@ def main():
         return pid,sorted(periods,key=lambda b:b['desde'])
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         histories=dict(pool.map(block_fetch,sorted(person_ids)))
+    def term_fetch(pid):
+        body=get('GetLegisladoresMandatos',{'id_legislador':pid},f'terms-{pid}.xml',args.refresh)
+        terms=[]
+        def iso(value):
+            return datetime.strptime(value,'%d/%m/%Y %H:%M:%S').date().isoformat() if value else None
+        for node in ET.fromstring(body).iter():
+            if local(node)!='LegisladorMandato': continue
+            fields={local(c):c.text or '' for c in node}
+            begin,end=iso(fields['fch_desde']),iso(fields['fch_hasta'])
+            if not begin or begin>data['hasta']: continue
+            blocks=[{local(c):c.text or '' for c in b} for b in node.iter() if local(b)=='Bloque']
+            blocks.sort(key=lambda b:iso(b['fch_desde']) or '')
+            terms.append({'desde':begin,'hasta':end,'bloque_ingreso':blocks[0]['bloque'] if blocks else None})
+        return pid,sorted(terms,key=lambda t:t['desde'])
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+        term_histories=dict(pool.map(term_fetch,sorted(person_ids)))
     for pid in sorted(person_ids):
         r=lookup.get(pid,current.get(pid))
         a=current.get(pid,{})
@@ -139,7 +155,7 @@ def main():
                 'color':'#727a77','vigente':False,'color_oficial':False,'url':None}
         group=groups[block]['id']
         people.append({'id':pid,'nombre':f"{r['apellido'].strip()}, {r['nombre'].strip()}",
-            'activo':pid in current,'bloque_actual':a.get('bloque'),
+            'activo':pid in current,'bloque_actual':a.get('bloque'),'mandatos':term_histories[pid],
             'foto':a.get('fotoM') or a.get('fotoS') or a.get('foto') or None,
             'mandato_actual':{'desde':datetime.strptime(a['fecha_inicio_mandato'],'%d/%m/%Y').date().isoformat(),
                 'hasta':datetime.strptime(a['fecha_fin_mandato'],'%d/%m/%Y').date().isoformat()} if a else None,

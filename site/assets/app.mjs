@@ -25,7 +25,7 @@ const viewCopy = {
   panorama:['','Panorama',''],
   legisladores:['','Legisladores',''],
   proyectos:['','Proyectos',''],
-  red:['','Coautorías',''],
+  red:['','Análisis',''],
   ficha:['','Ficha',''],
   metodologia:['','Metodología',''],
 };
@@ -132,12 +132,12 @@ function renderPeople(){
   const filterGroup=$('#person-group').value;
   const people=visiblePeople.filter(p=>normalize(p.nombre+' '+p.bloque_referencia+' '+group(p).nombre).includes(term)&&(filterGroup==='all'||p.grupo===filterGroup||filterGroup.startsWith('visual:')&&p.grupo_visual===filterGroup.slice(7)));
   const cardStats=new Map(visiblePeople.map(p=>[p.id,personStats(dataset.proyectos,p.id)]));
-  groupLegend('#people-group-legend');
+
   people.sort((a,b)=>order==='name'?a.nombre.localeCompare(b.nombre,'es'):cardStats.get(b.id)[order]-cardStats.get(a.id)[order]||a.nombre.localeCompare(b.nombre,'es'));
   $('#person-count').textContent=`${fmt(people.length)} legisladores`;
   $('#person-cards').innerHTML=people.length?people.map(p=>{
     const s=cardStats.get(p.id),max=Math.max(1,...s.types.map(t=>t.author+t.coauthor));
-    return `<a class="person-card" href="#ficha/${p.id}" style="--group:${group(p).color}"><div class="card-block-band" style="color:${p.grupo_visual==='otros'?'#202726':'#fffdf4'}">${esc(p.bloque_referencia||group(p).nombre)}</div><div class="person-top">${avatar(p)}<div><h2>${esc(displayName(p.nombre))}</h2>${p.mandato_actual?`<p class="card-term">${p.mandato_actual.desde.slice(0,4)}–${p.mandato_actual.hasta.slice(0,4)}</p>`:''}</div></div><div class="card-numbers"><div class="card-metric"><span>Autorías</span><div class="card-metric-body"><strong>${fmt(s.author)}</strong>${monthlySpark(s.authored,'Autorías')}</div></div><div class="card-metric"><span>Coautorías</span><div class="card-metric-body"><strong>${fmt(s.coauthor)}</strong>${monthlySpark(s.coauthored,'Coautorías')}</div></div></div><div class="card-type-bars" title="Autorías y coautorías por tipo">${s.types.map(t=>`<div class="card-type-row"><span>${esc(t.id==='ley'?'Ley':t.id==='informes'?'Informes*':t.id==='declaracion'?'Declaraciones':'Otras resoluciones')}</span><div class="card-bar-track"><div class="card-bar-stack" style="width:${(t.author+t.coauthor)/max*100}%;--cat:${t.color}" title="${fmt(t.author)} autorías · ${fmt(t.coauthor)} coautorías"><i style="width:${t.author/(t.author+t.coauthor||1)*100}%"></i><i class="coauthor-segment" style="width:${t.coauthor/(t.author+t.coauthor||1)*100}%"></i><span class="card-bar-count">${fmt(t.author+t.coauthor)}</span></div></div></div>`).join('')}</div></a>`;
+    return `<a class="person-card" href="#ficha/${p.id}" style="--group:${group(p).color}"><div class="card-block-band" style="color:${p.grupo_visual==='otros'?'#202726':'#fffdf4'}">${esc(p.bloque_referencia||group(p).nombre)}<span class="card-space">${esc(group(p).nombre)}</span></div><div class="person-top">${avatar(p)}<div><h2>${esc(displayName(p.nombre))}</h2>${(p.mandatos?.length?p.mandatos:p.mandato_actual?[p.mandato_actual]:[]).length?`<p class="card-term">${(p.mandatos?.length?p.mandatos:[p.mandato_actual]).map(t=>`${t.desde.slice(0,4)}–${t.hasta?t.hasta.slice(0,4):'actualidad'}`).join(' · ')}</p>`:''}${p.mandatos?.at(-1)?.bloque_ingreso&&p.mandatos.at(-1).bloque_ingreso!==p.bloque_referencia?`<p class="card-entry">Ingresó por ${esc(p.mandatos.at(-1).bloque_ingreso)}</p>`:''}</div></div><div class="card-numbers"><div class="card-metric"><span>Autorías</span><div class="card-metric-body"><strong>${fmt(s.author)}</strong>${monthlySpark(s.authored,'Autorías')}</div></div><div class="card-metric"><span>Coautorías</span><div class="card-metric-body"><strong>${fmt(s.coauthor)}</strong>${monthlySpark(s.coauthored,'Coautorías')}</div></div></div><div class="card-type-bars" title="Autorías y coautorías por tipo">${s.types.map(t=>`<div class="card-type-row"><span>${esc(t.id==='ley'?'Ley':t.id==='informes'?'Informes*':t.id==='declaracion'?'Declaraciones':'Otras resoluciones')}</span><div class="card-bar-track"><div class="card-bar-stack" style="width:${(t.author+t.coauthor)/max*100}%;--cat:${t.color}" title="${fmt(t.author)} autorías · ${fmt(t.coauthor)} coautorías"><i style="width:${t.author/(t.author+t.coauthor||1)*100}%"></i><i class="coauthor-segment" style="width:${t.coauthor/(t.author+t.coauthor||1)*100}%"></i><span class="card-bar-count">${fmt(t.author+t.coauthor)}</span></div></div></div>`).join('')}</div></a>`;
   }).join(''):'<p class="empty">Sin resultados. Cambiá los filtros.</p>';
   portraitFallbacks();
 }

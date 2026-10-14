@@ -31,11 +31,13 @@ test('La exportación real conserva identidades, fechas y el expediente de contr
   assert.ok(data.legisladores.some(p=>p.id===control.autor.id));
   assert.ok(data.proyectos.every(p=>p.fecha>=data.desde&&p.fecha<=data.hasta));
   assert.ok(data.proyectos.every(p=>['ley','informes','declaracion','resolucion'].includes(p.categoria)));
-  const expected=['#cb1f00','#34aad7','#00ae77','#efb118','#c367b3'];
-  assert.deepEqual(data.grupos.slice(0,5).map(g=>g.color),expected);
+  assert.equal(data.grupos_fuente,'https://www.legislatura.gob.ar/seccion/composicion-actual.html');
+  const expected={'Vamos por más':'#ffcc00','Fuerza por Buenos Aires':'#a3d9f0','La Libertad avanza':'#909828','Transformación':'#365f85'};
+  for(const [name,color] of Object.entries(expected))assert.equal(data.grupos.find(g=>g.nombre===name).color,color);
   assert.ok(data.legisladores.every(p=>p.bloque_referencia&&data.grupos.some(g=>g.id===p.grupo)));
   assert.ok(data.legisladores.every(p=>p.bloque_referencia_nota));
   const current=data.legisladores.filter(p=>p.activo);
+  assert.ok(current.every(p=>data.grupos.some(g=>g.id===p.grupo&&g.nombre===p.bloque_actual&&g.color_oficial)));
   assert.equal(current.length,data.composicion_actual.total);
   assert.ok(current.every(p=>p.mandato_actual?.desde&&p.mandato_actual?.hasta));
   assert.equal(data.composicion_actual.fuente,'https://www.legislatura.gob.ar/seccion/composicion-actual.html');

@@ -13,6 +13,14 @@ from pathlib import Path
 from scraper import BASE
 
 CACHE = Path('data/enrichment')
+COMPOSITION_SOURCE='https://www.legislatura.gob.ar/seccion/composicion-actual.html'
+
+
+def official_color(value):
+    value=value.strip().lstrip('#')
+    if not re.fullmatch(r'[0-9a-fA-F]{6}',value):
+        raise ValueError('Color de bloque oficial inválido')
+    return '#'+value.lower()
 
 
 def local(node):
@@ -97,7 +105,14 @@ def main():
             'sancion':r['tiene_sancion'],'sesiones':session_records.get(r['id'],[]),
             'url':r['url'],'documento':r['documento_url']})
     people=[]
-    group_config=json.loads(Path('political_groups.json').read_text(encoding='utf-8'))
+    blocks=rows(get('GetBloquesActivos',{'id_bloque':''},'official-blocks.xml',args.refresh),'bloques')
+    official_blocks={b['bloque']:{'id':'bloque-'+b['bloque_id'],'nombre':b['bloque'],
+        'color':official_color(b['bloque_color']),'vigente':True,'color_oficial':True,
+        'url':'https://www.legislatura.gob.ar/'+b['bloque_url']} for b in blocks}
+    for a in current.values():
+        if a['bloque'] not in official_blocks or official_color(a['bloque_color'])!=official_blocks[a['bloque']]['color']:
+            raise ValueError('La composición y el catálogo de bloques no coinciden: '+a['bloque'])
+    groups=dict(official_blocks)
     def block_fetch(pid):
         history=rows(get('GetLegisladoresBloques',{'id_legislador':pid},f'blocks-{pid}.xml',args.refresh),'LegisladorBloque')
         periods=[]
@@ -106,7 +121,7 @@ def main():
                 return datetime.strptime(value,'%d/%m/%Y %H:%M:%S').date().isoformat() if value else None
             begin,end=iso(b['fch_desde']),iso(b['fch_hasta'])
             if begin and begin<=data['hasta']:
-                periods.append({'bloque':b['bloque'],'desde':begin,'hasta':end})
+                periods.append({'bloque':b['bloque'],'id_bloque':b['id_bloque'],'desde':begin,'hasta':end})
         return pid,sorted(periods,key=lambda b:b['desde'])
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         histories=dict(pool.map(block_fetch,sorted(person_ids)))
@@ -117,7 +132,12 @@ def main():
         in_cycle=[b for b in history if not b['hasta'] or b['hasta']>=cutoff]
         block=a.get('bloque') or (in_cycle[-1]['bloque'] if in_cycle else history[-1]['bloque'] if history else None)
         block_note='Bloque actual' if a.get('bloque') else 'Último bloque del ciclo' if in_cycle else 'Último bloque previo al ciclo' if history else 'Bloque no disponible'
-        group=group_config['bloques'].get(block,'sin-clasificar')
+        if block not in groups:
+            periods=[b for b in history if b['bloque']==block]
+            bid=periods[-1]['id_bloque'] if periods else 'no-disponible'
+            groups[block]={'id':'bloque-'+bid,'nombre':block or 'Bloque no disponible',
+                'color':'#727a77','vigente':False,'color_oficial':False,'url':None}
+        group=groups[block]['id']
         people.append({'id':pid,'nombre':f"{r['apellido'].strip()}, {r['nombre'].strip()}",
             'activo':pid in current,'bloque_actual':a.get('bloque'),
             'mandato_actual':{'desde':datetime.strptime(a['fecha_inicio_mandato'],'%d/%m/%Y').date().isoformat(),
@@ -126,7 +146,8 @@ def main():
             'url':BASE+'pages/legislador.aspx?id='+pid})
     output={'actualizado':data['actualizado'],'enriquecido':datetime.now(timezone.utc).isoformat(),'desde':data['desde'],'hasta':data['hasta'],
         'sesiones_consultadas':len(sessions),'legisladores':people,'proyectos':projects,
-        'grupos':group_config['grupos'],'grupos_fuente':group_config['fuente'],
+        'grupos':sorted(groups.values(),key=lambda b:(not b['vigente'],b['nombre'])),
+        'grupos_fuente':COMPOSITION_SOURCE,
         'composicion_actual':{'fuente':'https://www.legislatura.gob.ar/seccion/composicion-actual.html',
             'servicio':BASE+'webservices/Json.asmx/GetDiputadosActivosNuevo','total':len(current),
             'consultada':datetime.fromtimestamp((CACHE/'active.xml').stat().st_mtime,timezone.utc).isoformat(),
@@ -134,7 +155,7 @@ def main():
         'metodologia':{'informes':'Heurística sobre el inicio del sumario de resoluciones; no clasificación oficial.',
             'sesion':'Asuntos considerados con ID de expediente; no mide debate individual ni duración.',
             'sancion':'Indicador oficial TieneSancion: no acredita promulgación, vigencia ni ausencia de veto.',
-            'bloques':'Identificación por bloque actual o último bloque conocido del ciclo; grupos editoriales según referencia electoral. El color no atribuye retrospectivamente un bloque a cada firma.'}}
+            'bloques':'Nombres y colores de bloques oficiales de la composición actual. Bloques históricos sin color publicado en gris. La fuente no identifica partido individual; el color no atribuye retrospectivamente un bloque a cada firma.'}}
     dest=Path('site/data'); dest.mkdir(parents=True,exist_ok=True)
     target=dest/'monitor.json'; temp=target.with_suffix('.tmp')
     temp.write_text(json.dumps(output,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8'); temp.replace(target)

@@ -1,7 +1,11 @@
 import unittest
-from prepare_site import category, rows
+from prepare_site import category, rows, official_color
 
 class ClassificationTest(unittest.TestCase):
+    def test_official_colors(self):
+        self.assertEqual(official_color('FFCC00'),'#ffcc00')
+        self.assertEqual(official_color('#a3d9f0'),'#a3d9f0')
+        with self.assertRaises(ValueError): official_color('unknown')
     def test_reports_starting_sumario(self):
         self.assertEqual(category({'tipo':'RESOLUCION','sumario':'INFORMES REFERIDOS A LAS ESCUELAS'}),'informes')
         self.assertEqual(category({'tipo':'RESOLUCION','sumario':'SOLICÍTASE AL PE UN INFORME SOBRE EL TRANSPORTE'}),'informes')

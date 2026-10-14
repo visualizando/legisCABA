@@ -68,6 +68,18 @@ function profileMetricsChart(s){
     if(x(r.author)<=28||x(r.coauthor)<=28)svg.append('text').attr('x',0).attr('y',y+48).text(`${fmt(r.author)} autorías · ${fmt(r.coauthor)} coautorías`);
   });
 }
+function profileTypesChart(target,rows){
+  const width=Math.max(260,$(target).clientWidth),x=d3.scaleLinear().domain([0,d3.max(rows,r=>Math.max(r.author,r.coauthor))||1]).range([0,width-38]);
+  const svg=figureSvg(target,width,300,rows.map(r=>`${r.label}: ${r.author} autorías y ${r.coauthor} coautorías`).join('. '));
+  rows.forEach((r,i)=>{const y=18+i*72;
+    svg.append('text').attr('x',0).attr('y',y).style('font-size','12px').style('fill','#202726').text(r.label);
+    for(const [key,offset,opacity] of [['author',8,1],['coauthor',29,.3]]){
+      svg.append('rect').attr('x',0).attr('y',y+offset).attr('width',x(r[key])).attr('height',16).attr('fill',r.color).attr('opacity',opacity);
+      svg.append('text').attr('x',x(r[key])+5).attr('y',y+offset+12).text(fmt(r[key]));
+    }
+  });
+  d3.select(target).append('div').attr('class','type-role-legend').html(['Autoría','Coautoría'].map((label,i)=>`<span><span class="type-swatches">${rows.map(r=>`<i style="background:${r.color};opacity:${i?.3:1}"></i>`).join('')}</span>${label}</span>`).join(''));
+}
 function categoriesChart(target,rows,profile=false){
   const width=Math.max(260,$(target).clientWidth),height=profile?300:260,left=width<380?126:157,right=42,top=16;
   const max=d3.max(rows,r=>profile?Math.max(r.author,r.coauthor):r.value)||1;
@@ -158,15 +170,15 @@ function blockTimeline(person){
   const names=[...new Set(history.map(b=>b.bloque))],shades=names.map((_,i)=>d3.interpolateRgb(group(person).color,'#fffdf4')(i*.22));
   const refs=history.map((b,i)=>`<li><i style="background:${shades[names.indexOf(b.bloque)]}"></i><span>${esc(b.bloque)} · ${b.desde.slice(0,4)}–${b.hasta?b.hasta.slice(0,4):'actualidad'}</span></li>`).join('');
   const marks=[start,...history.slice(1).map(b=>parse(b.desde)),end];
-  return `<div class="block-timeline temporal-timeline"><p class="timeline-title">Trayectoria por bloque</p><svg viewBox="0 0 600 52" role="img" aria-label="Tramos proporcionales a la duración de cada bloque"><title>${history.map(b=>`${b.bloque}: ${b.desde} a ${b.hasta||dataset.hasta}`).join('; ')}</title>${history.map(b=>`<rect x="${x(parse(b.desde))}" y="5" width="${x(parse(b.hasta||dataset.hasta)+day)-x(parse(b.desde))}" height="16" fill="${shades[names.indexOf(b.bloque)]}"><title>${esc(b.bloque)}: ${dateFmt(b.desde)} — ${b.hasta?dateFmt(b.hasta):'sin fecha de fin'}</title></rect>`).join('')}${marks.map((m,i)=>`<line x1="${x(m)}" x2="${x(m)}" y1="24" y2="29" stroke="#87958e"/><text x="${x(m)}" y="43" text-anchor="${i===0?'start':i===marks.length-1?'end':'middle'}" font-size="11" fill="#596461">${new Date(m-(i===marks.length-1?day:0)).getUTCFullYear()}</text>`).join('')}</svg><ol>${refs}</ol></div>`;
+  return `<div class="block-timeline temporal-timeline"><p class="timeline-title">Trayectoria por bloque</p><svg viewBox="0 0 600 74" role="img" aria-label="Tramos proporcionales a la duración de cada bloque"><title>${history.map(b=>`${b.bloque}: ${b.desde} a ${b.hasta||dataset.hasta}`).join('; ')}</title>${history.map(b=>`<rect x="${x(parse(b.desde))}" y="5" width="${x(parse(b.hasta||dataset.hasta)+day)-x(parse(b.desde))}" height="28" fill="${shades[names.indexOf(b.bloque)]}"><title>${esc(b.bloque)}: ${dateFmt(b.desde)} — ${b.hasta?dateFmt(b.hasta):'sin fecha de fin'}</title></rect>`).join('')}${marks.map((m,i)=>`<line x1="${x(m)}" x2="${x(m)}" y1="36" y2="42" stroke="#87958e"/><text x="${x(m)}" y="60" text-anchor="${i===0?'start':i===marks.length-1?'end':'middle'}" font-size="16" fill="#596461">${new Date(m-(i===marks.length-1?day:0)).getUTCFullYear()}</text>`).join('')}</svg><ol>${refs}</ol></div>`;
 }
 function renderProfile(){
   const p=peopleById.get(personId);if(!p){$('#profile-heading').innerHTML='<p class="empty">Ficha no disponible. Volvé al listado.</p>';$('#profile-metrics').innerHTML='';$('#profile-types').innerHTML='';$('#profile-partners').innerHTML='';$('#profile-projects').innerHTML='';return;}
   const s=stats.get(p.id);
-  $('#profile-heading').innerHTML=`${avatar(p,true)}<div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${p.mandato_actual.desde.slice(0,4)}–${p.mandato_actual.hasta.slice(0,4)}</p>`:''}${blockTimeline(p)}</div><a class="text-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
+  $('#profile-heading').innerHTML=`${avatar(p,true)}<div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${p.mandato_actual.desde.slice(0,4)}–${p.mandato_actual.hasta.slice(0,4)}</p>`:''}${blockTimeline(p)}</div><a class="text-link action-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
   portraitFallbacks();
   profileMetricsChart(s);
-  categoriesChart('#profile-types',s.types,true);
+  profileTypesChart('#profile-types',s.types);
   const collabs=partners(selected,p.id,visiblePeople).slice(0,10);
   $('#profile-partners').innerHTML=collabs.length?collabs.map(c=>`<a class="profile-partner" href="#ficha/${c.id}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></a>`).join(''):'<p class="empty">Sin proyectos compartidos.</p>';
   const status=$('#profile-status'),previous=status.value;
@@ -179,7 +191,7 @@ function authorLink(person){if(!peopleById.has(person.id))return esc(displayName
 function groupedSignatures(signatures){
   const blocks=new Map();
   for(const person of signatures){const known=peopleById.get(person.id),block=known?.bloque_referencia||'Bloque no disponible';if(!blocks.has(block))blocks.set(block,{people:[],known});blocks.get(block).people.push(person);}
-  return [...blocks].map(([block,{people,known}])=>`<span class="signature-group">${people.map(p=>peopleById.has(p.id)?`<a href="#ficha/${p.id}">${esc(displayName(p.nombre))}</a>`:esc(displayName(p.nombre))).join(', ')} <span class="signature-block" style="--group:${group(known).color}"><i aria-hidden="true"></i>${esc(block)}</span></span>`).join(' · ');
+  return [...blocks].map(([block,{people,known}])=>`<span class="signature-group">${people.map(p=>peopleById.has(p.id)?`<a href="#ficha/${p.id}">${esc(displayName(p.nombre))}</a>`:esc(displayName(p.nombre))).join(', ')} <span class="signature-block group-badge" style="--group:${group(known).color}"><i aria-hidden="true"></i>${esc(block)}</span></span>`).join(' · ');
 }
 function projectHtml(p){
   const c=cat(p.categoria);

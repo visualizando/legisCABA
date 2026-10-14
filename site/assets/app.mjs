@@ -49,13 +49,13 @@ function profileMetricsChart(s){
   ];
   const target='#profile-metrics',root=$(target);
   root.innerHTML='<h2>Participación en proyectos</h2><div class="profile-role-legend"><span><i class="author-key"></i>Autoría</span><span><i class="coauthor-key"></i>Coautoría</span></div><div class="chart profile-summary-chart"></div><p class="note">Los proyectos con sanción y con registro en sesión pueden coincidir.</p>';
-  const width=Math.max(260,root.clientWidth),left=0,right=48,height=190;
+  const width=Math.max(260,root.clientWidth),left=0,right=48,height=206;
   const x=d3.scaleLinear().domain([0,s.author+s.coauthor||1]).range([left,width-right]);
   const description=rows.map(r=>`${r.label}: ${fmt(r.author+r.coauthor)}; ${fmt(r.author)} autorías y ${fmt(r.coauthor)} coautorías`).join('. ');
   const svg=figureSvg('#profile-metrics .chart',width,height,description).attr('role','group');
   rows.forEach((r,i)=>{
-    const y=24+i*60,total=r.author+r.coauthor;
-    svg.append('text').attr('class','summary-label').attr('x',0).attr('y',y-10).text(r.label);
+    const y=20+i*68,total=r.author+r.coauthor;
+    svg.append('text').attr('class','summary-label').attr('x',0).attr('y',y-6).text(r.label);
     let offset=0;
     for(const [key,color] of [['author','#245d78'],['coauthor','#c3d4dc']]){
       const segmentWidth=x(r[key]);
@@ -70,8 +70,8 @@ function profileMetricsChart(s){
 }
 function profileTypesChart(target,rows,stats){
   const width=Math.max(260,$(target).clientWidth),x=d3.scaleLinear().domain([0,d3.max(rows,r=>Math.max(r.author,r.coauthor))||1]).range([0,width-60]);
-  const svg=figureSvg(target,width,230,rows.map(r=>`${r.label}: ${r.author} autorías y ${r.coauthor} coautorías`).join('. '));
-  rows.forEach((r,i)=>{const y=16+i*54;
+  const svg=figureSvg(target,width,250,rows.map(r=>`${r.label}: ${r.author} autorías y ${r.coauthor} coautorías`).join('. '));
+  rows.forEach((r,i)=>{const y=14+i*60;
     svg.append('text').attr('x',0).attr('y',y).style('font-size','12px').style('fill','#202726').text(r.label);
     for(const [key,offset,opacity] of [['author',8,1],['coauthor',24,1]]){
       const icon=svg.append('g').attr('transform',`translate(2,${y+offset})`).attr('aria-hidden','true').attr('fill','none').attr('stroke','#596461').attr('stroke-width',1.2);
@@ -85,8 +85,9 @@ function profileTypesChart(target,rows,stats){
       svg.append('text').attr('x',22+x(r[key])+5).attr('y',y+offset+10).text(fmt(r[key]));
     }
   });
-  d3.select(target).append('div').attr('class','type-role-legend').html(['Autoría','Coautoría'].map((label,i)=>`<span><svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="5" cy="3" r="2"/><path d="M1,12 V10 Q1,6 5,6 Q9,6 9,10 V12"/>${i?'<circle cx="12" cy="3" r="2"/><path d="M10,6 Q16,6 16,10 V12"/>':''}</svg>${label}</span>`).join(''));
-  d3.select(target).append('p').attr('class','note').text('Color: con sanción · tenue: sin sanción registrada');
+  const references=d3.select(target).append('div').attr('class','chart-references');
+  references.append('div').attr('class','type-role-legend').html(['Autoría','Coautoría'].map((label,i)=>`<span><svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="5" cy="3" r="2"/><path d="M1,12 V10 Q1,6 5,6 Q9,6 9,10 V12"/>${i?'<circle cx="12" cy="3" r="2"/><path d="M10,6 Q16,6 16,10 V12"/>':''}</svg>${label}</span>`).join(''));
+  references.append('p').attr('class','note').text('Color: con sanción · tenue: sin sanción registrada');
 }
 function categoriesChart(target,rows,profile=false){
   const width=Math.max(260,$(target).clientWidth),height=profile?300:260,left=width<380?126:157,right=42,top=16;
@@ -188,7 +189,7 @@ function renderProfile(){
   profileMetricsChart(s);
   profileTypesChart('#profile-types',s.types,s);
   const collabs=partners(selected,p.id,visiblePeople).slice(0,5);
-  $('#profile-partners').innerHTML=collabs.length?collabs.map(c=>`<a class="profile-partner" style="--shared-width:${100*c.value/collabs[0].value}%;--shared-color:${group(c).color}" href="#ficha/${c.id}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></a>`).join(''):'<p class="empty">Sin proyectos compartidos.</p>';
+  $('#profile-partners').innerHTML=collabs.length?collabs.map(c=>`<a class="profile-partner" style="--shared-ratio:${c.value/collabs[0].value};--shared-color:${group(c).color}" href="#ficha/${c.id}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></a>`).join(''):'<p class="empty">Sin proyectos compartidos.</p>';
   const status=$('#profile-status'),previous=status.value;
   status.innerHTML='<option value="all">Todos los estados</option>'+[...new Set(s.signed.map(p=>p.estado))].sort().map(value=>`<option value="${esc(value)}">${esc(value.toLocaleLowerCase('es-AR'))}</option>`).join('');
   status.value=[...status.options].some(o=>o.value===previous)?previous:'all';

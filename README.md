@@ -84,3 +84,9 @@ POST a `https://parlamentaria.legislatura.gob.ar/webservices/Json.asmx/`, con `a
 El scraper usa solicitudes secuenciales, pausa y reintentos para errores de red. Rechaza respuestas inesperadas, cofirmantes desalineados y ejecuciones totalmente vacías; publica solo después de completar las consultas. Una consulta mensual vacía puede ser válida: no permite por sí sola detectar omisiones del servidor. No se infiere una etapa política simplificada: se conserva la descripción oficial.
 
 La leyenda usa los seis espacios políticos definidos. Transformación y bloques sin correspondencia quedan en Otros; se conserva su nombre oficial en las fichas y en los datos.
+
+### Criterios gráficos
+
+- Mantener cada título más cerca de sus propias barras que del siguiente grupo.
+- Ubicar los valores al final de sus barras o segmentos correspondientes.
+- Agrupar las referencias en un recuadro gris tenue y centrado.

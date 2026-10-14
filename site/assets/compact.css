@@ -58,3 +58,10 @@
 #profile-partners .profile-partner{padding-block:8px;font-size:12px}#profile-partners .profile-partner>span:first-child{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}#profile-partners .partner-political{display:inline;margin:0}#view-ficha .two-charts figcaption{margin-bottom:14px}
 
 #profile-partners .profile-partner{position:relative;border-bottom:0;padding-top:0;padding-bottom:6px;margin-bottom:16px}#profile-partners .profile-partner::after{content:"";position:absolute;bottom:0;left:0;width:var(--shared-width);height:4px;background:var(--shared-color);border-radius:2px}
+
+/* Keep each label closer to its own bars than to the next group. */
+.chart-references,.profile-role-legend{width:fit-content;max-width:100%;margin-inline:auto;padding:8px 12px;background:#efefeb;border-radius:6px;color:var(--muted)}
+.chart-references .type-role-legend{justify-content:center;margin-top:0}.chart-references .note{text-align:center;margin:6px 0 0;font-size:11px}.profile-role-legend{justify-content:center}
+#profile-partners .profile-partner{display:block;padding-bottom:10px;margin-bottom:18px;--bar-space:42px}
+#profile-partners .profile-partner::after{width:calc((100% - var(--bar-space)) * var(--shared-ratio))}
+#profile-partners .profile-partner>span:last-child{position:absolute;left:calc((100% - var(--bar-space)) * var(--shared-ratio) + 7px);bottom:-5px;font-size:12px;line-height:14px}

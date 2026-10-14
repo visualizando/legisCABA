@@ -166,11 +166,11 @@ function blockTimeline(person){
   if(!history.length)return '';
   const day=86400000,parse=s=>Date.parse(s+'T00:00:00Z');
   const start=Math.min(...history.map(b=>parse(b.desde))),end=Math.max(...history.map(b=>parse(b.hasta||dataset.hasta)+day));
-  const x=value=>8+(value-start)/(end-start||day)*584;
   const names=[...new Set(history.map(b=>b.bloque))],shades=names.map((_,i)=>d3.interpolateRgb(group(person).color,'#fffdf4')(i*.22));
-  const refs=history.map((b,i)=>`<li><i style="background:${shades[names.indexOf(b.bloque)]}"></i><span>${esc(b.bloque)} · ${b.desde.slice(0,4)}–${b.hasta?b.hasta.slice(0,4):'actualidad'}</span></li>`).join('');
-  const marks=[start,...history.slice(1).map(b=>parse(b.desde)),end];
-  return `<div class="block-timeline temporal-timeline"><p class="timeline-title">Trayectoria por bloque</p><svg viewBox="0 0 600 74" role="img" aria-label="Tramos proporcionales a la duración de cada bloque"><title>${history.map(b=>`${b.bloque}: ${b.desde} a ${b.hasta||dataset.hasta}`).join('; ')}</title>${history.map(b=>`<rect x="${x(parse(b.desde))}" y="5" width="${x(parse(b.hasta||dataset.hasta)+day)-x(parse(b.desde))}" height="28" fill="${shades[names.indexOf(b.bloque)]}"><title>${esc(b.bloque)}: ${dateFmt(b.desde)} — ${b.hasta?dateFmt(b.hasta):'sin fecha de fin'}</title></rect>`).join('')}${marks.map((m,i)=>`<line x1="${x(m)}" x2="${x(m)}" y1="36" y2="42" stroke="#87958e"/><text x="${x(m)}" y="60" text-anchor="${i===0?'start':i===marks.length-1?'end':'middle'}" font-size="16" fill="#596461">${new Date(m-(i===marks.length-1?day:0)).getUTCFullYear()}</text>`).join('')}</svg><ol>${refs}</ol></div>`;
+  let cursor=start;const pieces=[];
+  for(const b of history){const begin=parse(b.desde),finish=parse(b.hasta||dataset.hasta)+day;if(begin>cursor)pieces.push(`<div class="timeline-gap" style="flex:${begin-cursor}"></div>`);
+    pieces.push(`<div class="timeline-period" style="flex:${finish-begin};--period-color:${shades[names.indexOf(b.bloque)]}"><div class="timeline-strip" title="${dateFmt(b.desde)} — ${b.hasta?dateFmt(b.hasta):'sin fecha de fin'}"></div><p>${esc(b.bloque)}</p><span>${b.desde.slice(0,4)}–${b.hasta?b.hasta.slice(0,4):'actualidad'}</span></div>`);cursor=finish;}
+  return `<div class="block-timeline duration-blocks"><p class="timeline-title">Trayectoria por bloque</p><div class="timeline-scroll"><div class="timeline-periods">${pieces.join('')}</div></div></div>`;
 }
 function renderProfile(){
   const p=peopleById.get(personId);if(!p){$('#profile-heading').innerHTML='<p class="empty">Ficha no disponible. Volvé al listado.</p>';$('#profile-metrics').innerHTML='';$('#profile-types').innerHTML='';$('#profile-partners').innerHTML='';$('#profile-projects').innerHTML='';return;}

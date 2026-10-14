@@ -59,13 +59,13 @@ Sin `--refresh`, el enriquecimiento reutiliza XML en `data/enrichment/` (excluid
 
 ### Publicación
 
-En el repositorio GitHub, configurar **Settings → Pages → Source: GitHub Actions**. `.github/workflows/publicar.yml` publica únicamente `site/`; corre manualmente, cuando cambia el sitio en la rama predeterminada o después de una actualización exitosa. Este último disparador permite publicar los datos que guarda el bot, cuyos commits no disparan por sí solos otros workflows con `GITHUB_TOKEN`. No se ha creado un repositorio ni publicado el sitio todavía.
+Repositorio: [visualizando/legisCABA](https://github.com/visualizando/legisCABA). Pages está configurado con **Source: GitHub Actions** para publicar en [visualizando.github.io/legisCABA](https://visualizando.github.io/legisCABA/). `.github/workflows/publicar.yml` publica únicamente `site/`; corre manualmente, cuando cambia el sitio en la rama predeterminada o después de una actualización exitosa. Este último disparador permite publicar los datos que guarda el bot, cuyos commits no disparan por sí solos otros workflows con `GITHUB_TOKEN`.
 
 ### Recolección programada
 
 El workflow corre a las 09:30 UTC (06:30 en Buenos Aires) y admite ejecución manual con años específicos. Por defecto refresca el año actual y el anterior completos, incluidos expedientes archivados. Para años más antiguos ejecutar manualmente; sus cambios no se monitorean con la configuración predeterminada. Los resultados se guardan en commits. Requiere un repositorio GitHub con permiso de escritura para Actions y una rama que acepte esos commits. Los cron necesitan el workflow en la rama predeterminada y pueden demorarse.
 
-Esta carpeta aún no es un repositorio Git y no se ha publicado ni activado el workflow. El micrositio consume `site/data/monitor.json`; SQLite queda disponible para análisis, sin servidor de base de datos.
+El micrositio consume `site/data/monitor.json`; SQLite queda disponible para análisis, sin servidor de base de datos. Los snapshots comprimidos se descomprimen al iniciar la actualización; el bot vuelve a comprimirlos antes de guardar el commit.
 
 ## Evidencia y límites
 

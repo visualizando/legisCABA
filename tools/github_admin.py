@@ -11,8 +11,8 @@ REPO='visualizando/legisCABA'
 
 def main():
     env={**os.environ,'GIT_TERMINAL_PROMPT':'0','GCM_INTERACTIVE':'Never'}
-    result=subprocess.run(['git','credential','fill'],input='protocol=https\nhost=github.com\n\n',text=True,capture_output=True,env=env,timeout=25)
-    fields=dict(line.split('=',1) for line in result.stdout.splitlines() if '=' in line)
+    result=subprocess.run(['git','credential','fill'],input=b'protocol=https\nhost=github.com\n\n',capture_output=True,env=env,timeout=25)
+    fields=dict(line.split('=',1) for line in result.stdout.decode('utf-8').splitlines() if '=' in line)
     token=fields.get('password')
     if not token:
         raise RuntimeError('No hay credencial GitHub disponible en el helper de Git')
@@ -33,6 +33,9 @@ def main():
         if state.get('build_type')!='workflow':
             state=api('/pages','PUT',{'build_type':'workflow'}) or api('/pages')
         print(json.dumps({'pages_url':state.get('html_url'),'build_type':state.get('build_type'),'status':state.get('status')}))
+    elif len(sys.argv)>1 and sys.argv[1]=='dispatch':
+        api('/actions/workflows/publicar.yml/dispatches','POST',{'ref':'main'})
+        print('Publicación solicitada para main')
     else:
         runs=api('/actions/runs?per_page=5')['workflow_runs']
         print(json.dumps([{'id':r['id'],'name':r['name'],'status':r['status'],'conclusion':r['conclusion'],'url':r['html_url']} for r in runs]))

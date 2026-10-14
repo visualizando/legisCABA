@@ -152,12 +152,18 @@ function openProfileProjects(role,filter){
 function blockTimeline(person){
   const history=[...(person.bloques_historia||[])].sort((a,b)=>a.desde.localeCompare(b.desde));
   if(!history.length)return '';
-  return `<div class="block-timeline"><p class="timeline-title">Trayectoria por bloque</p><ol>${history.map(b=>`<li style="--timeline-color:${group(person).color}"><strong>${esc(b.bloque)}</strong><span>${dateFmt(b.desde)} — ${b.hasta?dateFmt(b.hasta):'sin fecha de fin'}</span></li>`).join('')}</ol></div>`;
+  const day=86400000,parse=s=>Date.parse(s+'T00:00:00Z');
+  const start=Math.min(...history.map(b=>parse(b.desde))),end=Math.max(...history.map(b=>parse(b.hasta||dataset.hasta)+day));
+  const x=value=>8+(value-start)/(end-start||day)*584;
+  const names=[...new Set(history.map(b=>b.bloque))],shades=names.map((_,i)=>d3.interpolateRgb(group(person).color,'#fffdf4')(i*.22));
+  const refs=history.map((b,i)=>`<li><i style="background:${shades[names.indexOf(b.bloque)]}"></i><span>${esc(b.bloque)} · ${b.desde.slice(0,4)}–${b.hasta?b.hasta.slice(0,4):'actualidad'}</span></li>`).join('');
+  const marks=[start,...history.slice(1).map(b=>parse(b.desde)),end];
+  return `<div class="block-timeline temporal-timeline"><p class="timeline-title">Trayectoria por bloque</p><svg viewBox="0 0 600 52" role="img" aria-label="Tramos proporcionales a la duración de cada bloque"><title>${history.map(b=>`${b.bloque}: ${b.desde} a ${b.hasta||dataset.hasta}`).join('; ')}</title>${history.map(b=>`<rect x="${x(parse(b.desde))}" y="5" width="${x(parse(b.hasta||dataset.hasta)+day)-x(parse(b.desde))}" height="16" fill="${shades[names.indexOf(b.bloque)]}"><title>${esc(b.bloque)}: ${dateFmt(b.desde)} — ${b.hasta?dateFmt(b.hasta):'sin fecha de fin'}</title></rect>`).join('')}${marks.map((m,i)=>`<line x1="${x(m)}" x2="${x(m)}" y1="24" y2="29" stroke="#87958e"/><text x="${x(m)}" y="43" text-anchor="${i===0?'start':i===marks.length-1?'end':'middle'}" font-size="11" fill="#596461">${new Date(m-(i===marks.length-1?day:0)).getUTCFullYear()}</text>`).join('')}</svg><ol>${refs}</ol></div>`;
 }
 function renderProfile(){
   const p=peopleById.get(personId);if(!p){$('#profile-heading').innerHTML='<p class="empty">Ficha no disponible. Volvé al listado.</p>';$('#profile-metrics').innerHTML='';$('#profile-types').innerHTML='';$('#profile-partners').innerHTML='';$('#profile-projects').innerHTML='';return;}
   const s=stats.get(p.id);
-  $('#profile-heading').innerHTML=`${avatar(p,true)}<div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${dateFmt(p.mandato_actual.desde)} — ${dateFmt(p.mandato_actual.hasta)}</p>`:''}${blockTimeline(p)}</div><a class="text-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
+  $('#profile-heading').innerHTML=`${avatar(p,true)}<div><h2>${esc(displayName(p.nombre))}</h2>${groupBadge(p)}<p>${esc(blockLabel(p))}</p>${p.mandato_actual?`<p>Mandato vigente: ${p.mandato_actual.desde.slice(0,4)}–${p.mandato_actual.hasta.slice(0,4)}</p>`:''}${blockTimeline(p)}</div><a class="text-link" href="${esc(p.url)}" target="_blank" rel="noopener">Ficha oficial ↗</a>`;
   portraitFallbacks();
   profileMetricsChart(s);
   categoriesChart('#profile-types',s.types,true);

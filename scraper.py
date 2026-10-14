@@ -68,6 +68,7 @@ def main():
     p.add_argument('--number', type=int, help='Consulta puntual para verificar conectividad')
     p.add_argument('--delay', type=float, default=1)
     p.add_argument('--chunk-days', type=int, default=2, help='Días por consulta; evita el filtro de año del servidor')
+    p.add_argument('--from-date', type=date.fromisoformat, help='Fecha mínima de presentación, YYYY-MM-DD')
     p.add_argument('--output', type=Path, default=Path('data'))
     args = p.parse_args()
     if args.delay < 0 or args.chunk_days < 1 or any(y < 1997 or y > date.today().year for y in args.years):
@@ -79,7 +80,7 @@ def main():
             batches = [request('GetExpedienteByNroyAnio', {'NroExpediente': args.number, 'AnioExpediente': year}, args.delay)]
         else:
             batches = []
-            start = date(year, 1, 1)
+            start = max(date(year, 1, 1), args.from_date or date(year, 1, 1))
             last = min(date(year, 12, 31), date.today())
             while start <= last:
                 end = min(start + timedelta(days=args.chunk_days - 1), last)

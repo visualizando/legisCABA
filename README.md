@@ -63,7 +63,7 @@ Repositorio: [visualizando/legisCABA](https://github.com/visualizando/legisCABA)
 
 ### Recolección programada
 
-El workflow corre a las 09:30 UTC (06:30 en Buenos Aires) y admite ejecución manual con años específicos. Por defecto refresca el año actual y el anterior completos, incluidos expedientes archivados. Para años más antiguos ejecutar manualmente; sus cambios no se monitorean con la configuración predeterminada. Los resultados se guardan en commits. Requiere un repositorio GitHub con permiso de escritura para Actions y una rama que acepte esos commits. Los cron necesitan el workflow en la rama predeterminada y pueden demorarse.
+El workflow corre a las 09:30 UTC (06:30 en Buenos Aires) y admite ejecución manual con años específicos. Por defecto refresca todo el ciclo desde el 10/12/2023, incluidos expedientes antiguos y archivados, para detectar cambios de estado. Los resultados se guardan en commits. Requiere permiso de escritura para Actions y una rama que acepte esos commits. Los cron necesitan el workflow en la rama predeterminada y pueden demorarse.
 
 El micrositio consume `site/data/monitor.json`; SQLite queda disponible para análisis, sin servidor de base de datos. Los snapshots comprimidos se descomprimen al iniciar la actualización; el bot vuelve a comprimirlos antes de guardar el commit.
 

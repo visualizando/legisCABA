@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       years:
-        description: Años a actualizar, separados por espacios (vacío = año actual y anterior)
+        description: Años a actualizar, separados por espacios (vacío = todo el ciclo desde 2023)
         required: false
 permissions:
   contents: write
@@ -33,9 +33,9 @@ jobs:
           python - <<'PY'
           import datetime, os, subprocess
           current = datetime.date.today().year
-          years = os.environ.get('REQUESTED_YEARS', '').split() or [str(current-1), str(current)]
+          years = os.environ.get('REQUESTED_YEARS', '').split() or [str(y) for y in range(2023, current+1)]
           years = [str(int(y)) for y in years]
-          subprocess.run(['python', 'scraper.py', '--years', *years], check=True)
+          subprocess.run(['python', 'scraper.py', '--years', *years, '--from-date', '2023-12-10'], check=True)
           PY
       - name: Regenerar datos del micrositio
         run: |

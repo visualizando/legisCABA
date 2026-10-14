@@ -5,10 +5,10 @@ const fmt = n => new Intl.NumberFormat('es-AR').format(n);
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const displayName = name => name.split(',').map(s=>s.trim().toLocaleLowerCase('es-AR').replace(/(^|\s)\p{L}/gu,c=>c.toLocaleUpperCase('es-AR'))).join(', ');
 const cat = id => categories.find(c=>c.id===id);
-const group = person => dataset.grupos.find(g=>g.id===person?.grupo)||{nombre:person?.bloque_referencia||'Bloque no disponible',color:'#727a77'};
-function groupBadge(person){const g=group(person);return `<span class="group-badge" style="--group:${g.color}"><i aria-hidden="true"></i>${esc(g.nombre)}</span>`;}
+const group = person => dataset.grupos_visuales?.find(g=>g.id===person?.grupo_visual)||dataset.grupos.find(g=>g.id===person?.grupo)||{nombre:person?.bloque_referencia||'Bloque no disponible',color:'#727a77'};
+function groupBadge(person){const g=group(person);return `<span class="group-badge" style="--group:${g.color}"><i aria-hidden="true"></i>${esc(person.bloque_referencia||g.nombre)}</span>`;}
 function blockLabel(person){return person.bloque_referencia_nota||'Bloque de referencia';}
-function groupLegend(target){$(target).innerHTML=dataset.grupos.filter(g=>g.vigente).map(g=>`<span class="legend-item" style="--cat:${g.color}"><i aria-hidden="true"></i>${esc(g.nombre)}</span>`).join('')+'<span class="legend-item" style="--cat:#727a77"><i aria-hidden="true"></i>Bloques históricos sin color publicado</span>';}
+function groupLegend(target){$(target).innerHTML=(dataset.grupos_visuales||dataset.grupos.filter(g=>g.vigente)).map(g=>`<span class="legend-item" style="--cat:${g.color}"><i aria-hidden="true"></i>${esc(g.nombre)}</span>`).join('');}
 const dateFmt = date => new Date(date+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'});
 const initials = name => name.split(',').map(s=>s.trim()[0]||'').join('').slice(0,2);
 let dataset, selected=[],stats=new Map(),peopleById,route='panorama',personId=null;

@@ -144,10 +144,19 @@ def main():
                 'hasta':datetime.strptime(a['fecha_fin_mandato'],'%d/%m/%Y').date().isoformat()} if a else None,
             'bloque_referencia':block,'bloque_referencia_nota':block_note,'grupo':group,'bloques_historia':history,
             'url':BASE+'pages/legislador.aspx?id='+pid})
+    counts=Counter(a['bloque'] for a in current.values())
+    visual_groups=[{**b,'bancas':counts[b['nombre']]} for b in official_blocks.values() if counts[b['nombre']]>1]
+    visual_groups.sort(key=lambda b:-b['bancas'])
+    visual_groups.append({'id':'otros','nombre':'Otros','color':'#727a77','bancas':sum(n for n in counts.values() if n==1)})
+    prominent={b['id'] for b in visual_groups if b['id']!='otros'}
+    for person in people:
+        person['grupo_visual']=person['grupo'] if person['grupo'] in prominent else 'otros' if person['activo'] else 'historicos'
+    visual_groups.append({'id':'historicos','nombre':'Bloques históricos sin color publicado','color':'#a6adaa','bancas':0})
     output={'actualizado':data['actualizado'],'enriquecido':datetime.now(timezone.utc).isoformat(),'desde':data['desde'],'hasta':data['hasta'],
         'sesiones_consultadas':len(sessions),'legisladores':people,'proyectos':projects,
         'grupos':sorted(groups.values(),key=lambda b:(not b['vigente'],b['nombre'])),
         'grupos_fuente':COMPOSITION_SOURCE,
+        'grupos_visuales':visual_groups,
         'composicion_actual':{'fuente':'https://www.legislatura.gob.ar/seccion/composicion-actual.html',
             'servicio':BASE+'webservices/Json.asmx/GetDiputadosActivosNuevo','total':len(current),
             'consultada':datetime.fromtimestamp((CACHE/'active.xml').stat().st_mtime,timezone.utc).isoformat(),

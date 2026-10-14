@@ -82,3 +82,5 @@ POST a `https://parlamentaria.legislatura.gob.ar/webservices/Json.asmx/`, con `a
 * Autocompletados: `webservices/AutoCompletar.asmx/GetAutores` (verificado; IDs de filtro distintos de IDs de fichas), `GetUbicaciones`, `GetEstados` (sin probar).
 
 El scraper usa solicitudes secuenciales, pausa y reintentos para errores de red. Rechaza respuestas inesperadas, cofirmantes desalineados y ejecuciones totalmente vacías; publica solo después de completar las consultas. Una consulta mensual vacía puede ser válida: no permite por sí sola detectar omisiones del servidor. No se infiere una etapa política simplificada: se conserva la descripción oficial.
+
+La leyenda visual destaca bloques vigentes con más de una banca; los monobloques se agrupan en “Otros”. Se conserva el nombre oficial individual y su color original en los datos. Los bloques históricos que no están en el catálogo vigente se muestran como categoría separada en gris claro.

@@ -43,7 +43,7 @@ function profileMetricsChart(s){
   ];
   const target='#profile-metrics',root=$(target);
   root.innerHTML='<h2>Participación en proyectos</h2><div class="profile-role-legend"><span><i class="author-key"></i>Autoría</span><span><i class="coauthor-key"></i>Coautoría</span></div><div class="chart profile-summary-chart"></div><p class="note">Los proyectos con sanción y con registro en sesión pueden coincidir.</p>';
-  const width=Math.max(260,root.clientWidth),left=0,right=48,height=300;
+  const width=Math.max(260,root.clientWidth),left=0,right=48,height=244;
   const x=d3.scaleLinear().domain([0,s.author+s.coauthor||1]).range([left,width-right]);
   const description=rows.map(r=>`${r.label}: ${fmt(r.author+r.coauthor)}; ${fmt(r.author)} autorías y ${fmt(r.coauthor)} coautorías`).join('. ');
   const svg=figureSvg('#profile-metrics .chart',width,height,description);
@@ -54,13 +54,12 @@ function profileMetricsChart(s){
     for(const [key,color] of [['author','#245d78'],['coauthor','#c3d4dc']]){
       const segmentWidth=x(r[key]);
       svg.append('rect').attr('x',x(offset)).attr('y',y).attr('width',segmentWidth).attr('height',32).attr('fill',color).append('title').text(`${key==='author'?'Autoría':'Coautoría'}: ${fmt(r[key])}`);
-      if(segmentWidth>28)svg.append('text').attr('class','summary-count').attr('x',x(offset)+segmentWidth/2).attr('y',y+21).attr('text-anchor','middle').style('fill',key==='author'?'#fff':'#202726').text(fmt(r[key]));
+      if(segmentWidth>28)svg.append('text').attr('class','summary-count').attr('x',x(offset)+segmentWidth-6).attr('y',y+21).attr('text-anchor','end').style('fill',key==='author'?'#fff':'#202726').text(fmt(r[key]));
       offset+=r[key];
     }
     svg.append('text').attr('class','summary-total').attr('x',x(total)+8).attr('y',y+21).text(fmt(total));
     if(x(r.author)<=28||x(r.coauthor)<=28)svg.append('text').attr('x',0).attr('y',y+48).text(`${fmt(r.author)} autorías · ${fmt(r.coauthor)} coautorías`);
   });
-  svg.append('g').attr('class','axis').attr('transform','translate(0,278)').call(d3.axisBottom(x).ticks(width<450?3:6).tickFormat(fmt));
 }
 function categoriesChart(target,rows,profile=false){
   const width=Math.max(260,$(target).clientWidth),height=profile?300:260,left=width<380?126:157,right=42,top=16;

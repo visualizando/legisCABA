@@ -3,3 +3,5 @@
 @media(max-width:650px){.hero{padding-block:24px 18px}.hero-aside{margin-top:12px}.section-heading h2{font-size:24px}.metric-value{font-size:34px}.section-tools .search{flex-basis:100%}}
 
 .profile-summary{margin-block:28px;border-block:1px solid var(--line);padding-block:20px}.profile-summary h2{font-size:26px;margin:0 0 12px}.profile-role-legend{display:flex;gap:20px;margin-bottom:18px;font-size:12px}.profile-role-legend span{display:flex;align-items:center;gap:6px}.profile-role-legend i{width:14px;height:14px;display:inline-block}.author-key{background:#245d78}.coauthor-key{background:#c3d4dc}.profile-summary-chart svg .summary-label{font-size:13px;fill:var(--ink)}.profile-summary-chart svg .summary-count,.profile-summary-chart svg .summary-total{font-size:13px;font-weight:700}.profile-summary-chart svg .summary-total{fill:var(--ink)}
+
+.profile-summary-chart svg .summary-count{font-weight:300}

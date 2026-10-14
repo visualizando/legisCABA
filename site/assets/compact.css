@@ -70,3 +70,5 @@
 #view-ficha .two-charts figure{border:0;padding:16px 0}#view-ficha .two-charts{gap:8px}
 #profile-project-block{margin-top:28px;padding:20px 16px;background:#fffdf4;border-radius:10px;box-shadow:0 2px 4px rgb(65 53 28 / 7%)}
 footer.wrap{display:flex;align-items:start;flex-wrap:wrap;gap:24px;justify-content:space-between}footer .footer-identity{max-width:320px}footer .brand.small{font-size:20px;font-weight:400}footer .footer-identity p{margin-top:8px;font-size:11px;line-height:1.5}footer .footer-source{font-size:11px;line-height:1.8}footer .footer-links{display:flex;gap:8px;flex-wrap:wrap}footer .footer-links a{font-size:11px}
+
+#view-ficha .profile-heading>.profile-block-band{width:auto;justify-self:stretch}

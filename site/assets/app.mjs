@@ -190,9 +190,9 @@ function renderProjects(target,rows,key){
   $(target).querySelectorAll('[data-page]').forEach(btn=>btn.addEventListener('click',()=>{pagination[key]+=btn.dataset.page==='prev'?-1:1;renderProjects(target,rows,key);$(target).scrollIntoView({block:'start',behavior:'instant'});$(target).querySelector('.pagination button:not(:disabled)')?.focus({preventScroll:true});}));
 }
 function renderAllProjects(){
-  const term=normalize($('#project-search').value),status=$('#project-status').value;
+  const term=normalize($('#project-search').value),statuses=[...$('#project-status').querySelectorAll('input:checked')].map(input=>input.value);
   const exactNumber=/^\d+-[a-z]+-\d{4}$/.test(term.trim());
-  const rows=selected.filter(p=>(!term||(exactNumber?normalize(p.numero)===term.trim():normalize(p.numero+' '+p.sumario+' '+p.autor.nombre).includes(term)))&&(status==='all'||status==='sanction'&&p.sancion||status==='session'&&p.sesiones.length||status==='no-sanction'&&!p.sancion));
+  const rows=selected.filter(p=>(!term||(exactNumber?normalize(p.numero)===term.trim():normalize(p.numero+' '+p.sumario+' '+p.autor.nombre).includes(term)))&&(!statuses.length||statuses.some(status=>status==='sanction'&&p.sancion||status==='session'&&p.sesiones.length||status==='no-sanction'&&!p.sancion)));
   renderProjects('#all-projects',rows,'all');
 }
 
@@ -244,6 +244,7 @@ function renderEdgeTable(){
   $('#edge-table').innerHTML=`<p class="note">100 conexiones más frecuentes.</p><div class="table-scroll"><table><thead><tr><th>Legislador/a</th><th>Legislador/a</th><th>Proyectos en común</th></tr></thead><tbody>${rows.map(e=>`<tr><td>${authorLink(peopleById.get(e.source))}</td><td>${authorLink(peopleById.get(e.target))}</td><td>${fmt(e.value)}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function render(){
+  $('#page-intro').classList.add('sr-only');
   const copy=viewCopy[route];$('#eyebrow').textContent=copy[0];$('#page-title').innerHTML=copy[1];$('#page-description').textContent=copy[2];$('#page-description').hidden=!copy[2];$('#eyebrow').hidden=!copy[0];
   if(route==='ficha'&&peopleById.has(personId))$('#page-title').textContent=displayName(peopleById.get(personId).nombre);
   $('.filters').hidden=route==='metodologia'||route==='legisladores';
@@ -283,7 +284,7 @@ async function init(){
     $('#load-state').hidden=true;$('#app').hidden=false;
     $('#global-filters').addEventListener('submit',e=>e.preventDefault());
     $('#year').addEventListener('change',applyFilters);$('#category').addEventListener('change',applyFilters);
-    $('#reset-filters').addEventListener('click',()=>{$('#year').value='all';$('#category').value='all';$('#active-only').checked=true;applyFilters();});
+    $('#reset-filters').addEventListener('click',()=>{$('#year').value='all';$('#category').value='all';$('#active-only').checked=true;$('#project-status').querySelectorAll('input').forEach(input=>input.checked=false);applyFilters();});
     $('#person-search').addEventListener('input',debounce(renderPeople));$('#person-sort').querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{$('#person-sort').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));renderPeople();}));$('#active-only').addEventListener('change',applyFilters);$('#person-group').addEventListener('change',renderPeople);
     $('#project-search').addEventListener('input',debounce(()=>{pagination.all=0;renderAllProjects();}));$('#project-status').addEventListener('change',()=>{pagination.all=0;renderAllProjects();});
     ['#profile-role','#profile-session','#profile-sanction','#profile-status'].forEach(id=>$(id).addEventListener('change',()=>{pagination.profile=0;renderProfile();}));

@@ -9,9 +9,9 @@
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
   <link rel="stylesheet" href="assets/compact.css?v=20261014-network-checkboxes">
-  <link rel="stylesheet" href="assets/votes.css">
+  <link rel="stylesheet" href="assets/votes.css?v=20261015-historico">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261015-votaciones"></script>
+  <script type="module" src="assets/app.mjs?v=20261015-historico"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -73,21 +73,32 @@
       <p id="votes-state" class="votes-status" role="status"></p>
       <div id="votes-controls" class="votes-controls" hidden>
         <label>Año de votación<select id="votes-year"></select></label>
-        <label>Bloque de referencia<select id="votes-reference"></select></label>
+        <label>Tipo de proyecto<select id="votes-category"><option value="all">Todos los tipos</option><option value="ley">Proyectos de ley</option><option value="informes">Pedidos de informes*</option><option value="declaracion">Declaraciones</option><option value="resolucion">Otras resoluciones</option><option value="otros">Otros asuntos</option><option value="sin-datos">Sin categoría identificada</option></select></label>
+        <label class="check"><input type="checkbox" id="votes-active"> Solo legisladores actuales</label>
+        <label class="check"><input type="checkbox" id="votes-grouped" checked> Unificar cambios de nombre</label>
         <label class="check"><input type="checkbox" id="votes-contested"> Solo votaciones con posiciones distintas</label>
       </div>
       <div id="votes-content" hidden>
-        <h3>Votos que coinciden con el bloque de referencia</h3><p id="votes-subtitle" class="note"></p>
+        <h3>Cómo varía la coincidencia con el PRO</h3>
+        <p id="votes-history-note" class="votes-status"></p>
+        <details class="votes-method"><summary>Elegir bloques del gráfico</summary><div id="votes-series"></div></details>
+        <div id="votes-trend" class="votes-trend" tabindex="0" role="region" aria-label="Gráfico anual, desplazable horizontalmente en pantallas pequeñas"></div>
+        <details class="votes-method"><summary>Ver tabla de datos del gráfico</summary><div id="votes-years"></div></details>
+        <div class="section-heading"><h3>Coincidencia en el período seleccionado</h3></div>
+        <p id="votes-subtitle" class="note"></p>
         <p id="votes-denominator" class="votes-status" role="status"></p>
         <div id="votes-ranking" class="votes-ranking"></div>
-        <details class="votes-method"><summary>Ver coincidencia por año</summary><div id="votes-years"></div></details>
+        <details class="votes-method"><summary>Ver continuidades entre bloques</summary><div id="votes-continuities"></div></details>
         <details class="votes-method"><summary>Cómo se calcula y qué límites tiene</summary>
-          <p>El bloque oficialista de referencia es Vamos por más (ID oficial 119). Se puede elegir otro bloque para comparar. La posición de referencia requiere más de la mitad de sus votos emitidos en una misma opción: afirmativo, negativo o abstención. Si no hay mayoría, la votación se excluye.</p>
+          <p>La referencia es siempre el PRO, siguiendo sus denominaciones históricas: Unión Pro, Vamos Juntos y Vamos por más (IDs oficiales 83, 86 y 119). La posición de referencia requiere más de la mitad de sus votos emitidos en una misma opción: afirmativo, negativo o abstención. Si no hay mayoría, la votación se excluye.</p>
           <p>El porcentaje de cada bloque es la cantidad de votos individuales que coinciden con esa posición dividida por sus votos emitidos comparables. Se pondera cada voto individual, no cada legislador ni cada sesión. Un bloque dividido conserva los votos de todas sus posiciones; el bloque de referencia puede tener menos de 100%.</p>
           <p>“No votó” se informa aparte y no equivale a ausencia. Los bloques se reconstruyen con los períodos históricos oficiales a la fecha de votación; los registros sin una asignación identificable no entran en los porcentajes. Una misma iniciativa puede tener varias votaciones y cada ID de votación se cuenta una vez.</p>
-          <p id="votes-quality"></p><p>Actualización semanal desde el 10/12/2023. Las votaciones nominales publicadas no representan necesariamente la totalidad de decisiones del recinto.</p>
+          <p>El tipo de proyecto se obtiene de los expedientes oficiales. Una votación con varios expedientes puede tener más de una categoría; se cuenta una sola vez dentro de cada filtro. “Informes*” usa la misma clasificación por sumario que el resto del sitio. El filtro de legisladores actuales limita los votos comparados, pero conserva la mayoría histórica del PRO como referencia.</p>
+          <p>Las series 2016–2022 del Observable se preservan completas en la descarga histórica. El gráfico usa sus agregados hasta 2022 y datos nominales oficiales desde 2023. Hay votos nominales desde 2021 para recalcular los filtros; esos dos años de solapamiento se conservan sin duplicarlos en la serie. Los porcentajes históricos no tienen denominadores ni tipos de proyecto y no se recalculan con filtros. No se promedian ni se mezclan con los votos nuevos. El empalme marca un cambio de fuente y método.</p>
+          <p id="votes-quality"></p><p>Actualización semanal desde el 01/01/2021. Las votaciones nominales publicadas no representan necesariamente la totalidad de decisiones del recinto.</p>
           <p>Antecedentes: <a href="https://old.observablehq.com/@rusosnith/legislatura-portena" target="_blank" rel="noopener">Legislatura porteña en Observable ↗</a> y <a href="https://decadavotada.andytow.com/oficialism-l.php?year=2022" target="_blank" rel="noopener">Década Votada ↗</a>. La agregación por bloque usa aquí todos los votos individuales comparables.</p>
           <a class="download-link" href="data/votaciones.json" download>Descargar votos ↓</a>
+          <a class="download-link" href="data/oficialometro-historico.json" download>Descargar histórico Observable ↓</a>
         </details>
         <div class="section-heading"><h3>Explorar votaciones</h3></div>
         <label class="search">Buscar por asunto o fecha<input id="votes-search" type="search" placeholder="Tema, expediente o fecha" autocomplete="off"></label>

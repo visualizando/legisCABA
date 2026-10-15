@@ -1,4 +1,4 @@
-"""Recolecta votaciones nominales del ciclo y conserva observaciones en SQLite."""
+"""Recolecta votaciones nominales desde 2021 y conserva observaciones en SQLite."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timezone
@@ -12,7 +12,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 
 BASE = 'https://parlamentaria.legislatura.gob.ar/'
-START = '2023-12-10'
+START = '2021-01-01'
 RESUME = False
 
 
@@ -66,6 +66,8 @@ def connect(path):
       CREATE TABLE IF NOT EXISTS votacion_expedientes (
         votacion TEXT NOT NULL REFERENCES votaciones(id), expediente TEXT NOT NULL,
         PRIMARY KEY(votacion,expediente));
+      CREATE TABLE IF NOT EXISTS proyectos (
+        id TEXT PRIMARY KEY, numero TEXT, tipo TEXT, categoria TEXT, sumario TEXT);
     ''')
     return db
 
@@ -111,7 +113,7 @@ def unique_votes(rows):
 def export(db, now, end):
     def saved(kind):
         return {key: json.loads(payload) for key, payload in db.execute('SELECT id,payload FROM current WHERE kind=?', (kind,))}
-    sessions, ballots, details, histories = (saved(k) for k in ('session', 'ballot', 'votes', 'blocks'))
+    sessions, ballots, details, histories, projects = (saved(k) for k in ('session', 'ballot', 'votes', 'blocks', 'project'))
     people = {}
     blocks = {}
     output = []
@@ -134,18 +136,23 @@ def export(db, now, end):
             'asunto': ballot['asunto'], 'expedientes': sorted(set(ballot['expedientes'])),
             'positivos': int(ballot['positivos']), 'negativos': int(ballot['negativos']),
             'abstenciones': int(ballot['abstenciones']), 'votos': votes,
-            'totales_consistentes': ballot['totales_consistentes']})
+            'totales_consistentes': ballot['totales_consistentes'],
+            'categorias': sorted({projects[e]['categoria'] for e in ballot['expedientes'] if e in projects}),
+            'proyectos': [{k: projects[e][k] for k in ('id','numero','tipo','categoria','sumario')} for e in sorted(set(ballot['expedientes'])) if e in projects]})
     summary = {'sesiones': len(sessions), 'sesiones_con_votos': len({v['sesion'] for v in output}),
         'votaciones': len(output), 'votos': sum(len(v['votos']) for v in output),
         'sin_bloque_historico': unresolved,
         'recuentos_distintos_60': sum(len(v['votos']) != 60 for v in output),
         'totales_inconsistentes': sum(not v['totales_consistentes'] for v in output),
-        'registros_fuente': sum(len(rows) for rows in details.values())}
+        'registros_fuente': sum(len(rows) for rows in details.values()),
+        'sin_categoria': sum(not b['categorias'] for b in output)}
+    from vote_lineages import build_lineages
+    lineages = build_lineages(histories, blocks)
     return {'actualizado': now, 'desde': START, 'hasta': end, 'resumen': summary,
         'fuente': BASE + 'pages/ExpedienteBusqueda.aspx',
-        'referencia_predeterminada': ['119'],
-        'referencia_nombre': 'Vamos por más',
-        'legisladores': people, 'bloques': blocks, 'votaciones': output}
+        'referencia_predeterminada': ['119','86','83','7'],
+        'referencia_nombre': 'PRO (nombres históricos)',
+        'legisladores': people, 'bloques': blocks, 'votaciones': output, **lineages}
 
 
 def main():
@@ -159,7 +166,7 @@ def main():
     RESUME = args.resume
     end = date.fromisoformat(args.until)
     now = datetime.now(timezone.utc).isoformat()
-    sessions = fetch('GetSesionesAvanzado', {'FechaDesde': '10/12/2023', 'FechaHasta': end.strftime('%d/%m/%Y')})
+    sessions = fetch('GetSesionesAvanzado', {'FechaDesde': '01/01/2021', 'FechaHasta': end.strftime('%d/%m/%Y')})
     if not sessions:
         raise ValueError('Catálogo de sesiones vacío; se conserva la base anterior')
     ballots = {}
@@ -208,16 +215,35 @@ def main():
             'desde': iso(r['fch_desde']), 'hasta': iso(r['fch_hasta'])} for r in rows]
     with ThreadPoolExecutor(max_workers=2) as pool:
         histories = dict(pool.map(get_blocks, ids))
+    # Batch metadata supplies the same project categories used elsewhere on the site.
+    from prepare_site import category
+    exp_ids = sorted({eid for b in ballots.values() for eid in b['expedientes']}, key=int)
+    projects = {}
+    for offset in range(0, len(exp_ids), 80):
+        batch = exp_ids[offset:offset+80]
+        entries = fetch('GetExpedienteDatosBasicos', {'IdExpediente':'', 'NumeroOrden':'',
+            'AnoParlamentario':'', 'IdExpedientes': ','.join(batch)})
+        for r in entries:
+            tipo = r['proyecto_tipo_des']
+            projects[r['id_expediente']] = {'id':r['id_expediente'], 'numero':r['nro_de_expediente'],
+                'tipo':tipo, 'sumario':r['sumario'],
+                'categoria':category({'tipo':tipo,'sumario':r['sumario']}) if tipo in ('LEY','DECLARACION','RESOLUCION') else 'otros'}
+        if not entries:
+            raise ValueError('Metadatos de expedientes vacíos')
+    print(f'{len(projects)} expedientes clasificados', flush=True)
     Path(args.db).parent.mkdir(parents=True, exist_ok=True)
     db = connect(args.db)
     try:
         with db:
             # A successful full run adds/corrects observations, never deletes on absence.
             for kind, values in [('session', {s['id_sesion_lp']: s for s in sessions}),
-                                 ('ballot', ballots), ('votes', details), ('blocks', histories)]:
+                                 ('ballot', ballots), ('votes', details), ('blocks', histories), ('project', projects)]:
                 for key, value in values.items():
                     save(db, kind, key, value, now)
             data = export(db, now, args.until)
+            for p in projects.values():
+                db.execute('INSERT OR REPLACE INTO proyectos VALUES (?,?,?,?,?)',
+                    (p['id'],p['numero'],p['tipo'],p['categoria'],p['sumario']))
             for b in data['votaciones']:
                 db.execute('INSERT OR REPLACE INTO votaciones VALUES (?,?,?,?,?,?,?,?)',
                     (b['id'], b['sesion'], b['fecha'], b['asunto'], b['positivos'], b['negativos'], b['abstenciones'], b['totales_consistentes']))

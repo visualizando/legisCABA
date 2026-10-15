@@ -1,5 +1,5 @@
 import {categories,normalize,signers,filterProjects,personStats,makeGraph,partners,filterProfileProjects} from './model.mjs?v=20261014-filtros';
-import {renderVotes} from './votes.mjs';
+import {renderVotes} from './votes.mjs?v=20261015-historico';
 
 const $ = selector => document.querySelector(selector);
 const fmt = n => new Intl.NumberFormat('es-AR').format(n);
@@ -285,7 +285,7 @@ function render(){
   document.querySelectorAll('nav a').forEach(a=>{if(a.hash==='#'+(route==='ficha'?'legisladores':route))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   document.title=route==='panorama'?'LegisCABA — Monitor parlamentario':`${route==='red'?'Red de coautorías':route==='metodologia'?'Cómo leer los datos':route[0].toUpperCase()+route.slice(1)} — LegisCABA`;
   if(route==='panorama')renderOverview();if(route==='legisladores')renderPeople();if(route==='ficha')renderProfile();if(route==='proyectos')renderAllProjects();if(route==='red')renderNetwork();
-  if(route==='votaciones')renderVotes();
+  if(route==='votaciones')renderVotes(dataset);
 }
 function applyFilters(){
   state.year=$('#year').value;state.category=$('#category').value;

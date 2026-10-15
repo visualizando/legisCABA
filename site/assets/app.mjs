@@ -223,7 +223,10 @@ function renderAllProjects(){
   renderProjects('#all-projects',rows,'all');
 }
 
+function networkProjects(){const types=new Set([...$('#network-types').querySelectorAll('input:checked')].map(input=>input.value));return dataset.proyectos.filter(p=>types.has(p.categoria));}
+function bindCheckboxFilter(selector,onChange){$(selector).addEventListener('change',event=>{if(!$(selector).querySelector('input:checked'))event.target.checked=true;onChange();});}
 function renderNetwork(){
+  const selected=networkProjects(),visiblePeople=dataset.legisladores.filter(p=>p.activo);
   const minimum=Number($('#edge-min').value),mode=$('#edge-mode').value;
   graph=makeGraph(selected,visiblePeople,mode,minimum);graphZoom=null;const svg=d3.select('#network');svg.selectAll('*').remove();
   svg.on('click.clear',event=>{if(event.target===svg.node()){selectedNode=null;highlightNetwork();renderNetworkDetail();}});
@@ -260,7 +263,7 @@ function highlightNetwork(){
 }
 function renderNetworkDetail(){
   if(!selectedNode){$('#network-detail').innerHTML='<h2>Conexiones</h2><p>Seleccioná un nodo.</p>';return;}
-  const person=peopleById.get(selectedNode),s=stats.get(selectedNode);
+  const person=peopleById.get(selectedNode),s=personStats(networkProjects(),selectedNode);
   const collabs=graph.allEdges.filter(e=>e.source===selectedNode||e.target===selectedNode).map(e=>({...peopleById.get(e.source===selectedNode?e.target:e.source),value:e.value})).sort((a,b)=>b.value-a.value);
   const top=collabs.slice(0,5);
   $('#network-detail').innerHTML=`<div class="network-person-card" style="--group:${group(person).color}"><div class="card-block-band">${esc(person.bloque_referencia)}<span class="card-space">${esc(group(person).nombre)}</span></div><div class="network-person-summary">${avatar(person)}<div><h2>${esc(displayName(person.nombre))}</h2><p>${fmt(s.signed.length)} proyectos firmados</p></div><a href="#ficha/${person.id}" class="action-link">Ver ficha ↗</a></div></div><h3 class="network-partners-title">Cofirmantes frecuentes</h3><div class="partner-bars">${top.map(c=>`<button class="profile-partner" style="--shared-ratio:${c.value/(top[0]?.value||1)};--shared-color:${group(c).color}" type="button" data-node="${c.id}" aria-label="Explorar a ${esc(displayName(c.nombre))}"><span>${esc(displayName(c.nombre))}<small class="partner-political">${groupBadge(c)}</small></span><span>${fmt(c.value)}</span></button>`).join('')}</div><div class="network-detail-footer"><p>Incluye vínculos bajo el mínimo del gráfico.</p><button type="button" id="clear-node">Quitar selección</button></div>`;
@@ -276,12 +279,7 @@ function render(){
   const copy=viewCopy[route];$('#eyebrow').textContent=copy[0];$('#page-title').innerHTML=copy[1];$('#page-description').textContent=copy[2];$('#page-description').hidden=!copy[2];$('#eyebrow').hidden=!copy[0];
   if(route==='ficha'&&peopleById.has(personId))$('#page-title').textContent=displayName(peopleById.get(personId).nombre);
   $('.filters').hidden=route==='metodologia'||route==='legisladores'||route==='red';
-  const yearLabel=$('#year').closest('label');
-  const filterReset=$('#reset-filters');
-  if(route==='red'){$('.network-controls').prepend(yearLabel);$('.network-controls').append(filterReset);}else{$('#global-filters').prepend(yearLabel);$('#global-filters').append(filterReset);}
-  const categoryLabel=$('#category').closest('label');
-  if(route==='red')$('.network-controls').prepend(categoryLabel);else $('#global-filters').insertBefore(categoryLabel,$('#reset-filters'));
-  const activeLabel=$('#active-only').closest('label');(route==='legisladores'?$('#people-filters'):route==='red'?$('.network-controls'):$('#global-filters')).append(activeLabel);document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='view-'+route);
+  const activeLabel=$('#active-only').closest('label');(route==='legisladores'?$('#people-filters'):$('#global-filters')).append(activeLabel);document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='view-'+route);
   document.querySelectorAll('nav a').forEach(a=>{if(a.hash==='#'+(route==='ficha'?'legisladores':route))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   document.title=route==='panorama'?'LegisCABA — Monitor parlamentario':`${route==='red'?'Red de coautorías':route==='metodologia'?'Cómo leer los datos':route[0].toUpperCase()+route.slice(1)} — LegisCABA`;
   if(route==='panorama')renderOverview();if(route==='legisladores')renderPeople();if(route==='ficha')renderProfile();if(route==='proyectos')renderAllProjects();if(route==='red')renderNetwork();
@@ -319,7 +317,8 @@ async function init(){
     $('#year').addEventListener('change',applyFilters);$('#category').addEventListener('change',applyFilters);
     $('#reset-filters').addEventListener('click',()=>{$('#year').value='all';$('#category').value='all';$('#active-only').checked=true;$('#project-status').querySelectorAll('input').forEach(input=>input.checked=true);applyFilters();});
     $('#person-search').addEventListener('input',debounce(renderPeople));$('#person-sort').querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{$('#person-sort').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));renderPeople();}));$('#active-only').addEventListener('change',applyFilters);$('#person-group').addEventListener('change',renderPeople);
-    $('#project-search').addEventListener('input',debounce(()=>{pagination.all=0;renderAllProjects();}));$('#project-status').addEventListener('change',event=>{if(!$('#project-status').querySelector('input:checked'))event.target.checked=true;pagination.all=0;renderAllProjects();});
+    $('#project-search').addEventListener('input',debounce(()=>{pagination.all=0;renderAllProjects();}));bindCheckboxFilter('#project-status',()=>{pagination.all=0;renderAllProjects();});
+    bindCheckboxFilter('#network-types',renderNetwork);
     ['#profile-role','#profile-session','#profile-sanction','#profile-status'].forEach(id=>$(id).addEventListener('change',()=>{pagination.profile=0;renderProfile();}));
     $('#profile-reset').addEventListener('click',()=>{['#profile-role','#profile-session','#profile-sanction','#profile-status'].forEach(id=>$(id).value='all');pagination.profile=0;renderProfile();});
     $('#edge-min').addEventListener('change',renderNetwork);$('#edge-mode').addEventListener('change',renderNetwork);

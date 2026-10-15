@@ -1,7 +1,7 @@
-import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,blockKey,expandVoteTypes} from './votes-model.mjs?v=20261015-diciembre';
-import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-diciembre';
-import {personAutocomplete} from './person-autocomplete.mjs?v=20261015-diciembre';
-import {chartPng} from './chart-image.mjs?v=20261015-diciembre';
+import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,blockKey,expandVoteTypes} from './votes-model.mjs?v=20261015-labels';
+import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-labels';
+import {personAutocomplete} from './person-autocomplete.mjs?v=20261015-labels';
+import {chartPng} from './chart-image.mjs?v=20261015-labels';
 import {categories,normalize} from './model.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -113,14 +113,14 @@ function drawTrend(series){
     const last=s.points.at(-1);endpoints.push({s,last,natural:y(last.rate),label:y(last.rate),c});
   }
   endpoints.sort((a,b)=>a.label-b.label);
-  for(let i=1;i<endpoints.length;i++)endpoints[i].label=Math.max(endpoints[i].label,endpoints[i-1].label+38);
+  for(let i=1;i<endpoints.length;i++)endpoints[i].label=Math.max(endpoints[i].label,endpoints[i-1].label+22);
   if(endpoints.at(-1).label>h-m.bottom-12){const excess=endpoints.at(-1).label-(h-m.bottom-12);endpoints.forEach(p=>p.label-=excess);}
   for(const p of endpoints){
     const g=svg.append('g').attr('class','vote-endpoint').attr('data-series',p.s.id);labels.set(p.s.id,g);
     g.append('path').attr('d',`M${x(p.last.year)+6},${p.natural}L${w-m.right+10},${p.label}H${w-m.right+18}`).attr('stroke',p.c).attr('fill','none').attr('stroke-opacity',.7);
-    const text=g.append('text').attr('x',w-m.right+24).attr('y',p.label-3).attr('fill','#263c35').attr('class','vote-series-label');
+    const text=g.append('text').attr('x',w-m.right+24).attr('y',p.label+4).attr('fill',p.c).attr('class','vote-series-label');
     text.append('tspan').text(p.s.name.length>28?p.s.name.slice(0,26)+'…':p.s.name);
-    text.append('tspan').attr('x',w-m.right+24).attr('dy',18).attr('font-weight','700').text(percent(p.last.rate));text.append('title').text(p.s.name);
+    text.append('title').text(p.s.name);
   }
   let hoveredId=null;
   const focus=id=>{for(const [key,g] of groups)g.style('opacity',!id||key===id?1:.18);for(const [key,g] of labels)g.style('opacity',!id||key===id?1:.3);if(id)groups.get(id)?.raise();};

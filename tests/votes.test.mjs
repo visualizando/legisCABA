@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {majority,officialism,compareOfficialism,filterBallots,annualSeries,personAnnualSeries} from '../site/assets/votes-model.mjs';
+import {majority,officialism,compareOfficialism,filterBallots,annualSeries,personAnnualSeries,expandVoteTypes} from '../site/assets/votes-model.mjs';
 const vote=(bloque,voto,legislador)=>({bloque,voto,legislador});
 test('winning position includes NO VOTO, abstention and rejects ties',()=>{
   assert.equal(majority([vote('r','AFIRMATIVO'),vote('r','NO VOTÓ')]),null);
@@ -42,6 +42,20 @@ test('categories count a multi-project ballot once and distinguish missing categ
   assert.deepEqual(filterBallots(d,{types:['ley','informes']}).map(b=>b.id),['1','2']);
   assert.deepEqual(filterBallots(d,{types:['informes','sin-datos']}).map(b=>b.id),['2','3']);
   assert.equal(filterBallots(d,{types:[]}).length,0);
+});
+
+test('four visible types retain all categories and merge other resolutions and missing metadata into Otros',()=>{
+  const d={votaciones:[
+    {id:'1',fecha:'2025-01-01',categorias:['ley','resolucion']},
+    {id:'2',fecha:'2025-01-02',categorias:['resolucion']},
+    {id:'3',fecha:'2025-01-03',categorias:['otros']},
+    {id:'4',fecha:'2025-01-04',categorias:[]},
+    {id:'5',fecha:'2025-01-05',categorias:['informes']},
+    {id:'6',fecha:'2025-01-06',categorias:['declaracion']}
+  ]};
+  assert.deepEqual(filterBallots(d,{types:expandVoteTypes(['otros'])}).map(b=>b.id),['1','2','3','4']);
+  assert.deepEqual(filterBallots(d,{types:expandVoteTypes(['ley','otros'])}).map(b=>b.id),['1','2','3','4']);
+  assert.equal(filterBallots(d,{types:expandVoteTypes(['ley','informes','declaracion','otros'])}).length,6);
 });
 
 test('comparison preserves consensual ballots in general and applies type and year filters to both measures',()=>{

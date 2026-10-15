@@ -1,6 +1,7 @@
 // Tow treats non-participation as a position, not as a missing denominator.
 // CABA labels that position NO VOTÓ; the independent presence field is preserved.
 const choices=new Set(['AFIRMATIVO','NEGATIVO','ABSTENCIÓN','NO VOTÓ']);
+export const expandVoteTypes=types=>[...new Set(types.flatMap(type=>type==='otros'?['resolucion','otros','sin-datos']:[type]))];
 export function majority(votes){
   const counts=new Map();
   for(const v of votes)if(choices.has(v.voto))counts.set(v.voto,(counts.get(v.voto)||0)+1);

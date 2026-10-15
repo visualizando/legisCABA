@@ -22,19 +22,19 @@ Ejemplo de control: una persona con dos coincidencias en dos registros y otra co
 
 ## Comparación visible y filtros
 
-El sitio muestra juntas dos medidas: **general**, sobre todas las votaciones seleccionadas, y **con disidencias**, sobre aquellas que registran al menos dos posiciones entre afirmativo, negativo y abstención en todo el recinto. La no participación por sí sola no define una disidencia. Ambas conservan la fórmula individual y el promedio por bloque; cada una tiene su propio denominador y puede incluir distintas personas si faltan registros en el subconjunto. La ausencia de votos comparables se muestra como tal, nunca como 0%.
+Un selector permite elegir la medida del único gráfico: **general**, sobre todas las votaciones seleccionadas, y **con disidencias**, sobre aquellas que registran al menos dos posiciones entre afirmativo, negativo y abstención en todo el recinto. La no participación por sí sola no define una disidencia. Ambas conservan la fórmula individual y el promedio por bloque; cada una tiene su propio denominador y puede incluir distintas personas si faltan registros en el subconjunto. La ausencia de votos comparables se muestra como tal, nunca como 0%.
 
-Los filtros de año, tipos y padrón actual se aplican a las dos medidas, los dos gráficos y la tabla. Las casillas de tipos comparten módulo y estilos con Análisis; seleccionar varios tipos incluye su unión y cada ID se cuenta una sola vez. Se conserva al menos una casilla seleccionada. La selección de bloques se comparte entre los dos gráficos, que usan las mismas escalas. La búsqueda y la selección de todas/con disidencias dentro del explorador solo afectan al listado de votos.
+Los filtros de año, tipos y padrón actual se aplican a la medida elegida y al ranking colapsado. Las casillas de tipos comparten módulo y estilos con Análisis; seleccionar varios tipos incluye su unión y cada ID se cuenta una sola vez. Se conserva al menos una casilla seleccionada. Las opciones visibles son Ley, Informes, Declaraciones y Otros; Otros incluye otras resoluciones, otros asuntos y registros sin categoría. El gráfico muestra las trayectorias principales y la persona seleccionada, sin un selector adicional de bloques. La escala vertical sigue siendo de 0 a 100% al cambiar de medida. La búsqueda y la selección de todas/con disidencias dentro del explorador solo afectan al listado de votos.
 
 La comparación permite observar el peso de los consensos en la tasa general. En la captura del 15/10/2026, PO en 2025 tiene 108 coincidencias sobre 172 registros (62,8%): 65/70 en asuntos sin disidencias y 43/102 (42,2%) en asuntos con disidencias. Se contrastaron registros completos directamente con la API en los IDs 2252, 2304 y 2439: el primero es una coincidencia afirmativa en una efeméride; los otros son desacuerdos en presupuesto y adhesión al RIGI. El cálculo se verificó también de forma independiente en Python.
 
 ## Trayectoria individual
 
-Se puede agregar una persona a ambos gráficos y a la tabla anual. Es una serie adicional, identificada con línea negra discontinua, que sigue el ID de legislador a través de sus cambios de bloque. El ranking de bloques se conserva cerrado por defecto.
+Un buscador con autocompletado permite agregar una persona al gráfico. Soporta selección por teclado (flechas, Enter y Escape) y muestra la medida elegida. Es una serie adicional, identificada con línea negra discontinua, que sigue el ID de legislador a través de sus cambios de bloque. El ranking de bloques se conserva cerrado por defecto.
 
 Cada punto individual divide las coincidencias por los registros comparables de esa persona en el año, aplicando los filtros de año, tipos y padrón actual. Usa la misma referencia histórica del PRO y las mismas exclusiones de empates e inconsistencias. Los registros con voto válido y persona identificada pueden contribuir aunque falte el bloque histórico de esa persona: ese dato solo es indispensable para atribuir al bloque, y sigue siendo indispensable para construir la posición del PRO. El detalle del punto informa los bloques conocidos del año y marca los no identificados. No se promedian tasas por cada bloque al que perteneció la persona.
 
-Las votaciones sin fila individual no se rellenan; los años sin registros no generan puntos y la línea no une años no consecutivos. Si los filtros excluyen a la persona se indica que no hay votos comparables. La selección individual no modifica las series de los bloques ni filtra el explorador de votos. Se pueden desmarcar todos los bloques para ver solamente a la persona.
+Las votaciones sin fila individual no se rellenan; los años sin registros no generan puntos y la línea no une años no consecutivos. Si los filtros excluyen a la persona se indica que no hay votos comparables. La selección individual no modifica las series de los bloques ni filtra el explorador de votos. El selector de bloques y la tabla desplegable se retiraron de la interfaz; se conserva una tabla accesible para lectores de pantalla.
 
 ## Ausencia y “NO VOTÓ” en CABA
 
@@ -49,3 +49,9 @@ Se consultaron todas las sesiones de 2014 (42) y 2015 (36): el servicio de asunt
 El recolector consulta desde el 01/01/2016 en ventanas anuales, para evitar los timeouts observados en consultas históricas demasiado amplias. Registra la primera y última votación, sesiones consultadas y sesiones con datos por año en `cobertura_anual`. La actualización semanal vuelve a consultar todo el período para incorporar publicaciones tardías y correcciones.
 
 Los porcentajes anteriores del Observable quedan archivados como referencia, sin alimentar la visualización. Diferencias con Década Votada pueden deberse a cobertura, correcciones, períodos de pertenencia o agrupaciones distintas, aun usando la misma fórmula documentada. Por ejemplo, su ficha pública de Casielles tiene 161 votaciones para 2021 y 52 para 2022, mientras que nuestra consulta oficial devuelve 167 y 141 respectivamente: no se eliminan registros oficiales para forzar coincidencia numérica.
+
+## Presentación y exportación
+
+La sección usa controles compactos compartidos con el resto del sitio y un gráfico de 640 unidades de alto, con rótulos legibles. Al apuntar a un punto o enfocar una serie con teclado se destaca la línea completa. Las marcas verticales punteadas indican 2019 y 2023. Las explicaciones y la cobertura están en Metodología, debajo del gráfico.
+
+Copiar imagen escribe un PNG en el portapapeles mediante Clipboard API; Bajar imagen descarga el mismo PNG. La exportación incluye medida, filtros, persona elegida y fuente, con resolución doble y estilos resueltos. No incorpora el estado de resaltado temporal ni los controles. Si el navegador impide copiar, se informa y se ofrece descargar.

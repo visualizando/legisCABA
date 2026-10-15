@@ -12,9 +12,9 @@ export function bindCheckboxFilter(target,onChange){
   });
 }
 
-export function mountTypeFilter(target,onChange,{additional=[]}={}){
+export function mountTypeFilter(target,onChange,{choices=categories,additional=[]}={}){
   const root=element(target);
-  for(const choice of [...categories,...additional]){
+  for(const choice of [...choices,...additional]){
     const label=document.createElement('label'),input=document.createElement('input');
     input.type='checkbox';input.value=choice.id;input.checked=true;
     label.append(input,document.createTextNode(choice.label));root.append(label);

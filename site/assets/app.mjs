@@ -1,4 +1,5 @@
 import {categories,normalize,signers,filterProjects,personStats,makeGraph,partners,filterProfileProjects} from './model.mjs?v=20261014-filtros';
+import {renderVotes} from './votes.mjs';
 
 const $ = selector => document.querySelector(selector);
 const fmt = n => new Intl.NumberFormat('es-AR').format(n);
@@ -26,6 +27,7 @@ const viewCopy = {
   legisladores:['','Legisladores',''],
   proyectos:['','Proyectos',''],
   red:['','Análisis',''],
+  votaciones:['','Votaciones',''],
   ficha:['','Ficha',''],
   metodologia:['','Metodología',''],
 };
@@ -278,11 +280,12 @@ function render(){
   $('#page-intro').classList.add('sr-only');
   const copy=viewCopy[route];$('#eyebrow').textContent=copy[0];$('#page-title').innerHTML=copy[1];$('#page-description').textContent=copy[2];$('#page-description').hidden=!copy[2];$('#eyebrow').hidden=!copy[0];
   if(route==='ficha'&&peopleById.has(personId))$('#page-title').textContent=displayName(peopleById.get(personId).nombre);
-  $('.filters').hidden=route==='metodologia'||route==='legisladores'||route==='red';
+  $('.filters').hidden=['metodologia','legisladores','red','votaciones'].includes(route);
   const activeLabel=$('#active-only').closest('label');(route==='legisladores'?$('#people-filters'):$('#global-filters')).append(activeLabel);document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='view-'+route);
   document.querySelectorAll('nav a').forEach(a=>{if(a.hash==='#'+(route==='ficha'?'legisladores':route))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   document.title=route==='panorama'?'LegisCABA — Monitor parlamentario':`${route==='red'?'Red de coautorías':route==='metodologia'?'Cómo leer los datos':route[0].toUpperCase()+route.slice(1)} — LegisCABA`;
   if(route==='panorama')renderOverview();if(route==='legisladores')renderPeople();if(route==='ficha')renderProfile();if(route==='proyectos')renderAllProjects();if(route==='red')renderNetwork();
+  if(route==='votaciones')renderVotes();
 }
 function applyFilters(){
   state.year=$('#year').value;state.category=$('#category').value;

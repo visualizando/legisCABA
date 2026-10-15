@@ -2,7 +2,7 @@ name: Publicar micrositio en GitHub Pages
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ['Actualizar expedientes']
+    workflows: ['Actualizar expedientes', 'Actualizar votaciones']
     types: [completed]
   push:
     paths:

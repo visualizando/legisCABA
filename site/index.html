@@ -9,8 +9,9 @@
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
   <link rel="stylesheet" href="assets/compact.css?v=20261014-network-checkboxes">
+  <link rel="stylesheet" href="assets/votes.css">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261014-network-checkboxes"></script>
+  <script type="module" src="assets/app.mjs?v=20261015-votaciones"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -19,7 +20,7 @@
   <div class="masthead-note">Monitoreo de la legislatura<br><span>de la Ciudad de Buenos Aires</span></div>
   <span class="edition">Ciclo iniciado el 10.12.2023</span>
 </header>
-<div class="navline"><nav class="wrap" aria-label="Secciones"><a href="#panorama">Panorama</a><a href="#legisladores">Legisladores</a><a href="#proyectos">Proyectos</a><a href="#red">Análisis</a><a href="#metodologia">Metodología</a></nav></div>
+<div class="navline"><nav class="wrap" aria-label="Secciones"><a href="#panorama">Panorama</a><a href="#legisladores">Legisladores</a><a href="#proyectos">Proyectos</a><a href="#red">Análisis</a><a href="#votaciones">Votaciones</a><a href="#metodologia">Metodología</a></nav></div>
 <main id="contenido" class="wrap" tabindex="-1">
   <div id="load-state" role="status" class="loading">Cargando datos…</div>
   <noscript>Se necesita JavaScript para ver los datos.</noscript>
@@ -65,6 +66,33 @@
       <div class="network-controls"><fieldset id="network-types" class="project-status-checks"><legend>Tipo de proyecto</legend><label><input type="checkbox" value="ley" checked>Leyes</label><label><input type="checkbox" value="informes" checked>Pedidos de informes*</label><label><input type="checkbox" value="declaracion" checked>Declaraciones</label><label><input type="checkbox" value="resolucion" checked>Otras resoluciones</label></fieldset><label>Vínculo mínimo<select id="edge-min"><option value="5">5 proyectos compartidos</option><option value="15" selected>15 proyectos compartidos</option><option value="30">30 proyectos compartidos</option><option value="60">60 proyectos compartidos</option></select></label><label>Modelo de vínculo<select id="edge-mode"><option value="all">Todas las firmas entre sí</option><option value="author">Autor/a con coautores</option></select></label></div>
       <p class="note">Cada círculo representa un legislador. Las líneas conectan proyectos compartidos. El color indica el espacio político.</p><div class="network-layout"><div class="network-canvas"><div class="network-graph-tools"><button type="button" id="network-reset" class="quiet">Centrar red ↺</button><div class="zoom-buttons"><button type="button" id="zoom-in" aria-label="Acercar red">+</button><button type="button" id="zoom-out" aria-label="Alejar red">−</button></div></div><div id="network-stats" class="network-stats"></div><svg id="network" aria-label="Red de proyectos compartidos; seleccionar un nodo para explorar sus conexiones"></svg><div id="network-legend" class="legend"></div></div><aside class="network-detail" id="network-detail" aria-live="polite"></aside></div>
 
+    </section>
+
+    <section id="view-votaciones" class="view" hidden>
+      <header class="votes-intro"><h2>El oficialómetro</h2><p>¿Cuánto coincide el voto de cada bloque con el bloque oficialista?</p></header>
+      <p id="votes-state" class="votes-status" role="status"></p>
+      <div id="votes-controls" class="votes-controls" hidden>
+        <label>Año de votación<select id="votes-year"></select></label>
+        <label>Bloque de referencia<select id="votes-reference"></select></label>
+        <label class="check"><input type="checkbox" id="votes-contested"> Solo votaciones con posiciones distintas</label>
+      </div>
+      <div id="votes-content" hidden>
+        <h3>Votos que coinciden con el bloque de referencia</h3><p id="votes-subtitle" class="note"></p>
+        <p id="votes-denominator" class="votes-status" role="status"></p>
+        <div id="votes-ranking" class="votes-ranking"></div>
+        <details class="votes-method"><summary>Ver coincidencia por año</summary><div id="votes-years"></div></details>
+        <details class="votes-method"><summary>Cómo se calcula y qué límites tiene</summary>
+          <p>El bloque oficialista de referencia es Vamos por más (ID oficial 119). Se puede elegir otro bloque para comparar. La posición de referencia requiere más de la mitad de sus votos emitidos en una misma opción: afirmativo, negativo o abstención. Si no hay mayoría, la votación se excluye.</p>
+          <p>El porcentaje de cada bloque es la cantidad de votos individuales que coinciden con esa posición dividida por sus votos emitidos comparables. Se pondera cada voto individual, no cada legislador ni cada sesión. Un bloque dividido conserva los votos de todas sus posiciones; el bloque de referencia puede tener menos de 100%.</p>
+          <p>“No votó” se informa aparte y no equivale a ausencia. Los bloques se reconstruyen con los períodos históricos oficiales a la fecha de votación; los registros sin una asignación identificable no entran en los porcentajes. Una misma iniciativa puede tener varias votaciones y cada ID de votación se cuenta una vez.</p>
+          <p id="votes-quality"></p><p>Actualización semanal desde el 10/12/2023. Las votaciones nominales publicadas no representan necesariamente la totalidad de decisiones del recinto.</p>
+          <p>Antecedentes: <a href="https://old.observablehq.com/@rusosnith/legislatura-portena" target="_blank" rel="noopener">Legislatura porteña en Observable ↗</a> y <a href="https://decadavotada.andytow.com/oficialism-l.php?year=2022" target="_blank" rel="noopener">Década Votada ↗</a>. La agregación por bloque usa aquí todos los votos individuales comparables.</p>
+          <a class="download-link" href="data/votaciones.json" download>Descargar votos ↓</a>
+        </details>
+        <div class="section-heading"><h3>Explorar votaciones</h3></div>
+        <label class="search">Buscar por asunto o fecha<input id="votes-search" type="search" placeholder="Tema, expediente o fecha" autocomplete="off"></label>
+        <div id="votes-list"></div>
+      </div>
     </section>
 
     <section id="view-metodologia" class="view reading" hidden>

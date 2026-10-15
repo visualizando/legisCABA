@@ -90,3 +90,27 @@ La leyenda usa los seis espacios políticos definidos. Transformación y bloques
 - Mantener cada título más cerca de sus propias barras que del siguiente grupo.
 - Ubicar los valores al final de sus barras o segmentos correspondientes.
 - Agrupar las referencias en un recuadro gris tenue y centrado.
+
+## Votaciones y oficialómetro
+
+`python votes.py` consulta todas las sesiones desde el **10/12/2023** hasta hoy, sus asuntos nominales (`GetVotacionesAsuntos`) y el detalle de cada votación (`GetVotaciones`). Vuelve a consultar el ciclo completo para detectar publicaciones tardías y correcciones. Dos consultas concurrentes, pausa y reintentos; no requiere dependencias externas. `--until 2026-10-14` fija el corte. `--resume` reutiliza respuestas de `data/vote-cache/` para retomar una carga interrumpida: **no usar para actualizar** porque conserva las observaciones locales. La actualización programada siempre consulta nuevamente la fuente.
+
+La base `data/votaciones.sqlite` ofrece tablas `votaciones`, `votos` (clave votación–legislador) y `votacion_expedientes` (relación múltiple). `current` conserva la última respuesta por entidad y `observations` cada contenido distinto, con fecha y hash; `runs` registra las cargas completas. Los votos originales, incluyendo repeticiones del servicio por expedientes acumulados, quedan en las observaciones. La exportación `site/data/votaciones.json` cuenta cada persona una vez por ID de votación y mantiene todos los expedientes asociados. Ante una ausencia en la siguiente consulta no se elimina una votación previa. Un error de red, detalle vacío o respuesta inválida impide publicar la carga. Las discrepancias de totales se conservan y se excluyen del indicador; nunca se corrigen inventando votos.
+
+La sección **Votaciones** incluye el oficialómetro, filtro de año de votación, selector de bloque de referencia, opción para excluir unanimidades, tabla anual y explorador nominal con búsqueda, paginación y descarga. Sus filtros son independientes de los filtros de proyectos y del padrón actual.
+
+Primera captura, al 14/10/2026: **395 votaciones únicas, 23.773 registros individuales y 402 asociaciones a expedientes**, en 22 de 37 sesiones. Tras deduplicar personas por votación, los totales afirmativos, negativos y abstenciones coinciden con la fuente en las 395. Diez registros no tienen bloque histórico identificable (todos “NO VOTÓ”). El indicador inicial tiene 391 votaciones comparables con Vamos por más; cuatro carecen de mayoría de referencia.
+
+Referencia inicial: **Vamos por más, ID oficial 119**. La posición de referencia requiere mayoría absoluta entre sus votos emitidos (afirmativos, negativos y abstenciones), sin incluir “NO VOTÓ”. Empates, ausencia de votos emitidos y detalles inconsistentes quedan fuera. Para cada bloque se divide la cantidad de votos individuales coincidentes por sus votos emitidos comparables: cada voto tiene igual peso, no se promedian porcentajes por persona o sesión. Por eso la minoría disidente del propio bloque de referencia puede dejarlo debajo de 100%. “NO VOTÓ” se informa aparte y no se interpreta como ausencia. Los bloques se asignan por fecha con `GetLegisladoresBloques`; los períodos ambiguos o no identificables no se imputan al bloque actual y quedan fuera del porcentaje. Si dos períodos comparten el día de transición, se usa el que empieza ese día. Se conservan el bloque y la presencia informados en la respuesta nominal para auditoría.
+
+El [Observable de Legislatura porteña](https://old.observablehq.com/@rusosnith/legislatura-portena) y [Década Votada](https://decadavotada.andytow.com/oficialism-l.php?year=2022) son antecedentes. Aquí se explicita una agregación por votos individuales para comparar bloques. La cobertura corresponde a votaciones nominales publicadas; no acredita la totalidad de decisiones del recinto, ni que todas las sesiones hayan publicado sus datos. Se conservan recuentos diferentes de 60 para revisión sin atribuirles automáticamente un error.
+
+`.github/workflows/votaciones.yml` revisa el ciclo **cada lunes a las 10:30 UTC (07:30 de Buenos Aires)** y permite ejecución manual. Guarda los snapshots comprimidos de SQLite y JSON; `publicar.yml` publica Pages después de una actualización exitosa. Ambos recolectores comparten grupo de concurrencia para evitar escrituras simultáneas. El cron requiere que el workflow esté en la rama predeterminada y GitHub puede demorar su ejecución.
+
+```sh
+python tools/package_data.py unpack
+python votes.py
+python -m unittest discover -s tests -v
+node --test tests/model.test.mjs tests/votes.test.mjs
+python tools/package_data.py pack
+```

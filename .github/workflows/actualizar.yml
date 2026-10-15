@@ -10,7 +10,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: actualizar-expedientes
+  group: actualizar-datos-parlamentarios
   cancel-in-progress: false
 jobs:
   actualizar:

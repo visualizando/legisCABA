@@ -9,3 +9,6 @@ data/expedientes.json
 data/proyectos.json
 data/legiscaba.sqlite
 site/data/monitor.json
+data/votaciones.sqlite
+site/data/votaciones.json
+data/vote-cache/

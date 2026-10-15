@@ -3,7 +3,8 @@ import argparse
 import gzip
 from pathlib import Path
 
-FILES=['data/expedientes.json','data/legiscaba.sqlite','site/data/monitor.json']
+FILES=['data/expedientes.json','data/legiscaba.sqlite','site/data/monitor.json',
+       'data/votaciones.sqlite','site/data/votaciones.json']
 
 
 def main():

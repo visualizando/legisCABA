@@ -9,9 +9,9 @@
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
   <link rel="stylesheet" href="assets/compact.css?v=20261014-network-checkboxes">
-  <link rel="stylesheet" href="assets/votes.css?v=20261015-comparacion">
+  <link rel="stylesheet" href="assets/votes.css?v=20261015-personas">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261015-comparacion"></script>
+  <script type="module" src="assets/app.mjs?v=20261015-personas"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -84,16 +84,19 @@
         <p class="note">Ambas medidas comparan votos con el PRO. Cada asunto pesa lo mismo: los consensos en efemérides o nombres de escuelas también cuentan. La coincidencia general puede ser alta sin expresar apoyo político al gobierno.</p>
         <h3>Cómo varía la coincidencia con el PRO</h3>
         <p id="votes-history-note" class="votes-status"></p>
+        <label class="votes-person-control">Sumar trayectoria individual<select id="votes-person" aria-describedby="votes-person-note"><option value="">Sin trayectoria individual</option></select></label>
+        <p id="votes-person-note" class="votes-status" role="status">Elegí un legislador para comparar su trayectoria con los bloques. Su línea sigue a la persona aunque cambie de bloque.</p>
         <details class="votes-method"><summary>Elegir bloques del gráfico</summary><div id="votes-series"></div></details>
         <h4 class="votes-chart-heading">Coincidencia general</h4><p id="votes-trend-general-note" class="votes-status"></p>
         <div id="votes-trend" class="votes-trend" tabindex="0" role="region" aria-label="Gráfico anual, desplazable horizontalmente en pantallas pequeñas"></div>
         <h4 class="votes-chart-heading">Coincidencia con disidencias</h4><p id="votes-trend-contested-note" class="votes-status"></p>
         <div id="votes-trend-contested" class="votes-trend" tabindex="0" role="region" aria-label="Gráfico anual con disidencias, desplazable horizontalmente en pantallas pequeñas"></div>
         <details class="votes-method"><summary>Ver tabla de datos de ambos gráficos</summary><div id="votes-years"></div></details>
-        <div class="section-heading"><h3>Coincidencia en el período seleccionado</h3></div>
+        <details class="votes-method votes-ranking-panel"><summary>Ver ranking de bloques en el período seleccionado</summary>
         <p id="votes-subtitle" class="note"></p>
         <p id="votes-denominator" class="votes-status" role="status"></p>
         <div id="votes-ranking" class="votes-ranking"></div>
+        </details>
         <details class="votes-method"><summary>Ver continuidades entre bloques</summary><div id="votes-continuities"></div></details>
         <details class="votes-method"><summary>Cómo se calcula y qué límites tiene</summary>
           <p>Las dos medidas usan la misma fórmula y los mismos filtros de año, tipos y personas. La coincidencia general incluye los consensos. La medida con disidencias restringe el conjunto a votaciones con al menos dos posiciones entre afirmativo, negativo y abstención en todo el recinto. “NO VOTÓ” permanece en el cálculo, pero por sí solo no define una disidencia. Cada medida informa su propio número de votaciones y registros; si no hay registros comparables, no se muestra un 0%.</p>

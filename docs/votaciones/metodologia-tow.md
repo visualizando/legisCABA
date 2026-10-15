@@ -28,7 +28,15 @@ Los filtros de año, tipos y padrón actual se aplican a las dos medidas, los do
 
 La comparación permite observar el peso de los consensos en la tasa general. En la captura del 15/10/2026, PO en 2025 tiene 108 coincidencias sobre 172 registros (62,8%): 65/70 en asuntos sin disidencias y 43/102 (42,2%) en asuntos con disidencias. Se contrastaron registros completos directamente con la API en los IDs 2252, 2304 y 2439: el primero es una coincidencia afirmativa en una efeméride; los otros son desacuerdos en presupuesto y adhesión al RIGI. El cálculo se verificó también de forma independiente en Python.
 
-## Tratamiento de la no participación
+## Trayectoria individual
+
+Se puede agregar una persona a ambos gráficos y a la tabla anual. Es una serie adicional, identificada con línea negra discontinua, que sigue el ID de legislador a través de sus cambios de bloque. El ranking de bloques se conserva cerrado por defecto.
+
+Cada punto individual divide las coincidencias por los registros comparables de esa persona en el año, aplicando los filtros de año, tipos y padrón actual. Usa la misma referencia histórica del PRO y las mismas exclusiones de empates e inconsistencias. Los registros con voto válido y persona identificada pueden contribuir aunque falte el bloque histórico de esa persona: ese dato solo es indispensable para atribuir al bloque, y sigue siendo indispensable para construir la posición del PRO. El detalle del punto informa los bloques conocidos del año y marca los no identificados. No se promedian tasas por cada bloque al que perteneció la persona.
+
+Las votaciones sin fila individual no se rellenan; los años sin registros no generan puntos y la línea no une años no consecutivos. Si los filtros excluyen a la persona se indica que no hay votos comparables. La selección individual no modifica las series de los bloques ni filtra el explorador de votos. Se pueden desmarcar todos los bloques para ver solamente a la persona.
+
+## Ausencia y “NO VOTÓ” en CABA
 
 La fuente porteña entrega `votacion_tipo_descripcion` y `presente_descripcion` por separado. El primero utiliza “NO VOTÓ” tanto para personas informadas como presentes como para personas ausentes. Para aplicar el tratamiento de la no participación como posición se utiliza literalmente “NO VOTÓ” como cuarta categoría, sin convertirla en una afirmación de ausencia física.
 

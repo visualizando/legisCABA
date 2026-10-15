@@ -124,3 +124,5 @@ python -m unittest discover -s tests -v
 node --test tests/model.test.mjs tests/votes.test.mjs
 python tools/package_data.py pack
 ```
+
+La sección Votaciones prioriza los gráficos y mantiene el ranking de bloques cerrado por defecto. “Sumar trayectoria individual” agrega una persona a los dos gráficos y a la tabla anual, sin cambiar el listado de votaciones. La serie sigue el ID individual a través de cambios de bloque, aplica los mismos filtros y no completa años sin registros. Se puede ver sola desmarcando los bloques.

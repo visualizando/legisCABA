@@ -1,6 +1,6 @@
 import {categories,normalize,signers,filterProjects,personStats,makeGraph,partners,filterProfileProjects} from './model.mjs?v=20261014-filtros';
-import {bindCheckboxFilter,mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-comparacion';
-import {renderVotes} from './votes.mjs?v=20261015-comparacion';
+import {bindCheckboxFilter,mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-personas';
+import {renderVotes} from './votes.mjs?v=20261015-personas';
 
 const $ = selector => document.querySelector(selector);
 const fmt = n => new Intl.NumberFormat('es-AR').format(n);

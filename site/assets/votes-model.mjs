@@ -63,3 +63,25 @@ export function annualSeries(data,options={}){
   }
   return {series:[...series.values()].sort((a,b)=>a.name.localeCompare(b.name,'es'))};
 }
+
+// Keep a person's identity across bloc changes; each eligible vote counts once.
+export function personAnnualSeries(data,personId,options={}){
+  const series={id:`person:${personId}`,kind:'person',name:data.legisladores[personId],points:[]};
+  if(options.activeIds&&!options.activeIds.has(personId))return series;
+  const years=new Map(),reference=options.reference||data.referencia_predeterminada;
+  for(const b of filterBallots(data,options)){
+    if(b.totales_consistentes===false)continue;
+    const position=majority(b.votos.filter(v=>reference.includes(v.bloque)));
+    if(position===null)continue;
+    const v=b.votos.find(v=>v.legislador===personId&&choices.has(v.voto));
+    if(!v)continue;
+    const year=Number(b.fecha.slice(0,4));
+    if(!years.has(year))years.set(year,{year,matches:0,total:0,nonvotes:0,blocks:new Set()});
+    const point=years.get(year);point.total++;point.matches+=Number(v.voto===position);
+    point.nonvotes+=Number(v.voto==='NO VOTÓ');
+    point.blocks.add(data.bloques[v.bloque]||'Sin bloque histórico identificado');
+  }
+  series.points=[...years.values()].sort((a,b)=>a.year-b.year).map(p=>({...p,
+    blocks:[...p.blocks],rate:Math.round(p.matches/p.total*10000)/10000,people:1,source:'oficial'}));
+  return series;
+}

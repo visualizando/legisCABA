@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {majority,officialism,compareOfficialism,filterBallots,annualSeries} from '../site/assets/votes-model.mjs';
+import {majority,officialism,compareOfficialism,filterBallots,annualSeries,personAnnualSeries} from '../site/assets/votes-model.mjs';
 const vote=(bloque,voto,legislador)=>({bloque,voto,legislador});
 test('winning position includes NO VOTO, abstention and rejects ties',()=>{
   assert.equal(majority([vote('r','AFIRMATIVO'),vote('r','NO VOTÓ')]),null);
@@ -77,4 +77,25 @@ test('every year is recalculated from raw votes; source archives never replace a
   assert.ok(joined.every(p=>p.rate===1&&p.source==='oficial'));
   assert.deepEqual(annualSeries(d,{category:'ley'}).series[0].points,joined);
   assert.deepEqual(annualSeries(d,{year:'2018'}).series[0].points.map(p=>p.year),[2018]);
+});
+
+test('individual trajectory follows one person across blocs and preserves missing years',()=>{
+  const d={referencia_predeterminada:['r'],legisladores:{p:'Persona'},bloques:{r:'PRO',a:'Antes',b:'Después'},votaciones:[
+    {id:'1',fecha:'2022-03-01',categorias:['ley'],positivos:2,negativos:0,abstenciones:0,votos:[vote('r','AFIRMATIVO','r1'),vote('a','AFIRMATIVO','p')]},
+    {id:'2',fecha:'2022-05-01',categorias:['ley','resolucion'],positivos:1,negativos:1,abstenciones:0,votos:[vote('r','AFIRMATIVO','r1'),vote('b','NEGATIVO','p')]},
+    {id:'3',fecha:'2024-03-01',categorias:['informes'],positivos:1,negativos:0,abstenciones:0,votos:[vote('r','AFIRMATIVO','r1'),vote(null,'NO VOTÓ','p')]},
+    {id:'4',fecha:'2024-05-01',categorias:['ley'],positivos:1,negativos:1,abstenciones:0,votos:[vote('r','AFIRMATIVO','r1'),vote('r','NEGATIVO','r2'),vote('b','AFIRMATIVO','p')]},
+    {id:'5',fecha:'2024-06-01',categorias:['ley'],positivos:9,negativos:0,abstenciones:0,totales_consistentes:false,votos:[vote('r','AFIRMATIVO','r1'),vote('b','AFIRMATIVO','p')]}
+  ]};
+  const series=personAnnualSeries(d,'p');
+  assert.equal(series.kind,'person');
+  assert.deepEqual(series.points.map(p=>[p.year,p.matches,p.total,p.rate]),[[2022,1,2,.5],[2024,0,1,0]]);
+  assert.deepEqual(series.points[0].blocks,['Antes','Después']);
+  assert.deepEqual(series.points[1].blocks,['Sin bloque histórico identificado']);
+  assert.equal(series.points[1].nonvotes,1);
+  assert.deepEqual(personAnnualSeries(d,'p',{types:['ley','resolucion']}).points.map(p=>p.total),[2]);
+  assert.deepEqual(personAnnualSeries(d,'p',{contested:true}).points.map(p=>[p.year,p.rate,p.total]),[[2022,0,1]]);
+  assert.equal(personAnnualSeries(d,'p',{year:'2023'}).points.length,0);
+  assert.equal(personAnnualSeries(d,'p',{activeIds:new Set(['r1'])}).points.length,0);
+  assert.equal(personAnnualSeries(d,'p',{activeIds:new Set(['p'])}).points[0].rate,.5);
 });

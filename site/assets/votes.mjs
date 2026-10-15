@@ -1,5 +1,5 @@
-import {compareOfficialism,filterBallots,annualSeries,blockKey} from './votes-model.mjs?v=20261015-comparacion';
-import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-comparacion';
+import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,blockKey} from './votes-model.mjs?v=20261015-personas';
+import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-personas';
 import {categories,normalize} from './model.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -18,13 +18,15 @@ export async function renderVotes(monitor){
     data=await response.json();
     const years=[...new Set(data.votaciones.map(v=>v.fecha.slice(0,4)))].sort().reverse();
     $('#votes-year').innerHTML='<option value="all">Todo el histórico</option>'+years.map(y=>`<option>${y}</option>`).join('');
+    $('#votes-person').insertAdjacentHTML('beforeend',Object.entries(data.legisladores).sort((a,b)=>a[1].localeCompare(b[1],'es')).map(([id,name])=>`<option value="${esc(id)}">${esc(name)}</option>`).join(''));
+    $('#votes-person').addEventListener('change',render);
     ['#votes-year','#votes-active'].forEach(id=>$(id).addEventListener('change',()=>{page=0;render();}));
     mountTypeFilter('#votes-types',()=>{page=0;render();},{additional:[{id:'otros',label:'Otros asuntos'},{id:'sin-datos',label:'Sin categoría identificada'}]});
     $('#votes-list-scope').addEventListener('change',()=>{page=0;renderList();});
     $('#votes-reset').addEventListener('click',()=>{
       $('#votes-year').value='all';$('#votes-active').checked=false;$('#votes-grouped').checked=true;
       $('#votes-types').querySelectorAll('input').forEach(input=>input.checked=true);
-      $('#votes-list-scope').value='all';$('#votes-search').value='';selectedSeries=null;page=0;render();
+      $('#votes-list-scope').value='all';$('#votes-search').value='';$('#votes-person').value='';selectedSeries=null;page=0;render();
     });
     $('#votes-grouped').addEventListener('change',()=>{page=0;selectedSeries=null;render();});
     $('#votes-search').addEventListener('input',()=>{page=0;renderList();});
@@ -59,6 +61,12 @@ function render(){
   $('#votes-trend-contested-note').textContent=`Mismos filtros, solo votaciones con disidencias entre afirmativo, negativo y abstención. ${fmt(contested.eligible)} con referencia del PRO definida. Misma escala de 0 a 100%.`;
   const first=data.cobertura_anual?.find(y=>y.primera)?.primera||data.desde;
   $('#votes-history-note').textContent=`Toda la serie se calcula con nuestro scrapeo de votos oficiales. Primera votación publicada recuperada: ${first}. ${first.slice(0,4)} comienza en esa fecha; ${data.hasta.slice(0,4)} es parcial. Todos los filtros se aplican a todo el histórico disponible.`;
+  const personId=$('#votes-person').value;
+  if(personId){
+    const person=personAnnualSeries(data,personId,{...f,contested:false}),personContested=personAnnualSeries(data,personId,{...f,contested:true});
+    annual.series.push(person);annualContested.series.push(personContested);
+    $('#votes-person-note').textContent=person.points.length?`${person.name} · línea negra discontinua en ambos gráficos. General: ${fmt(person.points.reduce((n,p)=>n+p.total,0))} registros; con disidencias: ${fmt(personContested.points.reduce((n,p)=>n+p.total,0))}. La trayectoria reúne sus votos aunque cambie de bloque; el detalle de cada punto informa el bloque de ese año.`:`${person.name}: sin votos comparables con los filtros seleccionados. Probá otro año o tipo, o desactivá “Solo legisladores actuales”.`;
+  }else $('#votes-person-note').textContent='Elegí un legislador para comparar su trayectoria con los bloques. Su línea sigue a la persona aunque cambie de bloque.';
   renderTrend(annual.series,annualContested.series);
   $('#votes-ranking').innerHTML=comparison.rows.length?comparison.rows.map(g=>`<div class="vote-rank"><h4>${esc(g.name)}</h4>${rankMeasure(g,'General')}${rankMeasure(g.contested,'Con disidencias')}</div>`).join(''):'<p class="empty">No hay votos comparables. Probá otros tipos o restablecé los filtros.</p>';
   renderTable(annual.series,annualContested.series);renderContinuities();
@@ -70,20 +78,20 @@ function rankMeasure(row,label){
 }
 function renderTrend(series,contestedSeries){
   if(selectedSeries===null)selectedSeries=new Set(['119','124','104','114','107','9'].map(id=>blockKey(data,id)));
-  $('#votes-series').innerHTML=`<div class="vote-series-actions"><button type="button" id="votes-series-all">Todos</button><button type="button" id="votes-series-none">Ninguno</button></div><div class="vote-series-options">${series.map(s=>`<label><input type="checkbox" value="${esc(s.id)}" ${selectedSeries.has(s.id)?'checked':''}><i style="background:${color(s.id)}" aria-hidden="true"></i>${esc(s.name)}</label>`).join('')}</div>`;
+  $('#votes-series').innerHTML=`<div class="vote-series-actions"><button type="button" id="votes-series-all">Todos</button><button type="button" id="votes-series-none">Ninguno</button></div><div class="vote-series-options">${series.filter(s=>s.kind!=='person').map(s=>`<label><input type="checkbox" value="${esc(s.id)}" ${selectedSeries.has(s.id)?'checked':''}><i style="background:${color(s.id)}" aria-hidden="true"></i>${esc(s.name)}</label>`).join('')}</div>`;
   $('#votes-series').querySelectorAll('input').forEach(input=>input.onchange=()=>{input.checked?selectedSeries.add(input.value):selectedSeries.delete(input.value);drawTrends(series,contestedSeries);});
-  $('#votes-series-all').onclick=()=>{selectedSeries=new Set(series.map(s=>s.id));renderTrend(series,contestedSeries);};
+  $('#votes-series-all').onclick=()=>{selectedSeries=new Set(series.filter(s=>s.kind!=='person').map(s=>s.id));renderTrend(series,contestedSeries);};
   $('#votes-series-none').onclick=()=>{selectedSeries=new Set();renderTrend(series,contestedSeries);};
   drawTrends(series,contestedSeries);
 }
 function drawTrends(series,contestedSeries){
-  const years=series.flatMap(s=>s.points.map(p=>p.year));
+  const years=[...series,...contestedSeries].flatMap(s=>s.points.map(p=>p.year));
   drawTrend(series,'#votes-trend','General',years);
   drawTrend(contestedSeries,'#votes-trend-contested','Con disidencias',years);
 }
 function drawTrend(series,target,measure,allYears){
-  const selected=series.filter(s=>selectedSeries.has(s.id)),root=d3.select(target);root.selectAll('*').remove();
-  if(!selected.length){root.append('p').attr('class','empty').text(!selectedSeries.size?'Elegí uno o más bloques para ver su evolución.':'No hay votos comparables para los bloques y filtros seleccionados.');return;}
+  const selected=series.filter(s=>(s.kind==='person'||selectedSeries.has(s.id))&&s.points.length),root=d3.select(target);root.selectAll('*').remove();
+  if(!selected.length){root.append('p').attr('class','empty').text(!selectedSeries.size&&!$('#votes-person').value?'Elegí uno o más bloques para ver su evolución.':'No hay votos comparables para los bloques y filtros seleccionados.');return;}
   const min=Math.min(...allYears),max=Math.max(...allYears);
   const w=1040,h=410,m={top:34,right:295,bottom:45,left:48};
   const x=d3.scaleLinear().domain(min===max?[min-.5,max+.5]:[min,max]).range([m.left,w-m.right]);
@@ -94,12 +102,12 @@ function drawTrend(series,target,measure,allYears){
   svg.append('g').attr('transform',`translate(0,${h-m.bottom})`).call(d3.axisBottom(x).tickValues(d3.range(min,max+1)).tickFormat(d3.format('d')));
   const endpoints=[];
   for(const s of selected){
-    const g=svg.append('g'),c=color(s.id);
+    const g=svg.append('g'),c=s.kind==='person'?'var(--ink)':color(s.id),individual=s.kind==='person';
     for(let i=1;i<s.points.length;i++){
       const a=s.points[i-1],b=s.points[i];if(b.year-a.year!==1)continue;
-      g.append('line').attr('x1',x(a.year)).attr('y1',y(a.rate)).attr('x2',x(b.year)).attr('y2',y(b.rate)).attr('stroke',c).attr('stroke-width',2);
+      g.append('line').attr('x1',x(a.year)).attr('y1',y(a.rate)).attr('x2',x(b.year)).attr('y2',y(b.rate)).attr('stroke',c).attr('stroke-width',individual?3:2).attr('stroke-dasharray',individual?'7 4':null);
     }
-    g.selectAll('circle').data(s.points).join('circle').attr('cx',p=>x(p.year)).attr('cy',p=>y(p.rate)).attr('r',3.5).attr('stroke',c).attr('stroke-width',1.5).attr('fill',c).append('title').text(p=>`${measure} · ${s.name} · ${p.year}: ${percent(p.rate)} · ${fmt(p.people)} legisladores · ${fmt(p.total)} registros`);
+    g.selectAll('circle').data(s.points).join('circle').attr('cx',p=>x(p.year)).attr('cy',p=>y(p.rate)).attr('r',individual?5:3.5).attr('stroke',c).attr('stroke-width',1.5).attr('fill',c).append('title').text(p=>`${measure} · ${s.name} · ${p.year}: ${percent(p.rate)} · ${pointDetail(p)}`);
     const last=s.points.at(-1);endpoints.push({s,last,natural:y(last.rate),label:y(last.rate),c});
   }
   endpoints.sort((a,b)=>a.label-b.label);
@@ -109,7 +117,7 @@ function drawTrend(series,target,measure,allYears){
     svg.append('path').attr('d',`M${x(p.last.year)+5},${p.natural}L${w-m.right+12},${p.label}H${w-m.right+20}`).attr('stroke',p.c).attr('fill','none').attr('stroke-opacity',.6);
     svg.append('text').attr('x',w-m.right+25).attr('y',p.label+4).attr('fill','var(--ink)').attr('class','vote-series-label').text(`${p.s.name.length>35?p.s.name.slice(0,33)+'…':p.s.name} · ${percent(p.last.rate)}`);
   }
-  const points=selected.flatMap(s=>s.points.map(p=>({...p,name:s.name,color:color(s.id)})));
+  const points=selected.flatMap(s=>s.points.map(p=>({...p,name:s.name,color:s.kind==='person'?'var(--ink)':color(s.id)})));
   const nearest=d3.Delaunay.from(points,p=>x(p.year),p=>y(p.rate));
   const highlight=svg.append('circle').attr('r',6).attr('fill','none').attr('stroke-width',2).attr('opacity',0);
   const tip=root.append('div').attr('class','votes-chart-tooltip').attr('aria-hidden','true');
@@ -119,13 +127,16 @@ function drawTrend(series,target,measure,allYears){
       const [px,py]=d3.pointer(event,svg.node()),p=points[nearest.find(px,py)];
       highlight.attr('cx',x(p.year)).attr('cy',y(p.rate)).attr('stroke',p.color).attr('opacity',1);
       const box=highlight.node().getBoundingClientRect();
-      tip.text(`${measure} · ${p.name} · ${p.year}: ${percent(p.rate)} · ${fmt(p.people)} legisladores · ${fmt(p.total)} registros`).style('left',`${Math.min(window.innerWidth-160,Math.max(160,box.x+box.width/2))}px`).style('top',`${box.y-12}px`).style('opacity',1);
+      tip.text(`${measure} · ${p.name} · ${p.year}: ${percent(p.rate)} · ${pointDetail(p)}`).style('left',`${Math.min(window.innerWidth-160,Math.max(160,box.x+box.width/2))}px`).style('top',`${box.y-12}px`).style('opacity',1);
     }).on('pointerleave',()=>{tip.style('opacity',0);highlight.attr('opacity',0);});
+}
+function pointDetail(p){
+  return p.blocks?`${fmt(p.matches)} coincidencias de ${fmt(p.total)} registros · ${p.blocks.join(' / ')}`:`${fmt(p.people)} legisladores · ${fmt(p.total)} registros`;
 }
 function renderTable(series,contestedSeries){
   const years=[...new Set(series.flatMap(s=>s.points.map(p=>p.year)))].sort();
   const contestedById=new Map(contestedSeries.map(s=>[s.id,s]));
-  $('#votes-years').innerHTML=`<div class="table-scroll"><table><caption>Coincidencia anual con el PRO · promedio por legislador · ambas medidas con los mismos filtros</caption><thead><tr><th scope="col" rowspan="2">Bloque / trayectoria</th>${years.map(y=>`<th scope="colgroup" colspan="2">${y}</th>`).join('')}</tr><tr>${years.map(()=>'<th scope="col">General</th><th scope="col">Con disidencias</th>').join('')}</tr></thead><tbody>${series.map(s=>`<tr><th scope="row">${esc(s.name)}</th>${years.map(year=>[s,contestedById.get(s.id)].map(serie=>{const p=serie?.points.find(p=>p.year===year);return `<td>${p?percent(p.rate):'Sin votos comparables'}</td>`;}).join('')).join('')}</tr>`).join('')}</tbody></table></div>`;
+  $('#votes-years').innerHTML=`<div class="table-scroll"><table><caption>Coincidencia anual con el PRO · promedio por legislador · ambas medidas con los mismos filtros</caption><thead><tr><th scope="col" rowspan="2">Bloque / persona</th>${years.map(y=>`<th scope="colgroup" colspan="2">${y}</th>`).join('')}</tr><tr>${years.map(()=>'<th scope="col">General</th><th scope="col">Con disidencias</th>').join('')}</tr></thead><tbody>${series.filter(s=>s.points.length).map(s=>`<tr><th scope="row">${esc(s.name)}</th>${years.map(year=>[s,contestedById.get(s.id)].map(serie=>{const p=serie?.points.find(p=>p.year===year);return `<td>${p?percent(p.rate):'Sin votos comparables'}</td>`;}).join('')).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 function renderContinuities(){
   $('#votes-continuities').innerHTML=`<p>Se unifican movimientos simultáneos de al menos dos legisladores cuando representan al menos el 80% de quienes continuaban en el bloque de origen y de quienes continuaban en el de destino. Se cuentan solo personas con bloque identificado antes y después. Las escisiones y las fusiones sin esa continuidad permanecen separadas. Se conservan los nombres originales en cada voto.</p><div class="table-scroll"><table><thead><tr><th>Origen</th><th>Continuidad</th><th>Fecha</th><th>Movimiento</th><th>Tratamiento</th></tr></thead><tbody>${(data.continuidades||[]).map(c=>`<tr><td>${esc(c.nombre_origen||data.bloques[c.desde]||c.desde)}</td><td>${esc(c.nombre_destino||data.bloques[c.hacia]||c.hacia)}</td><td>${c.fecha}</td><td>${c.legisladores.length}/${c.continuaban_origen} en origen · ${c.legisladores.length}/${c.continuaban_destino} en destino</td><td>${c.unificados?'Unificados':'Separados'}</td></tr>`).join('')}</tbody></table></div>`;

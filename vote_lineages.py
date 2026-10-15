@@ -17,7 +17,7 @@ def build_lineages(histories, names):
     for periods in histories.values():
         for p in periods:
             names[p['id_bloque']] = p['bloque']
-            if p['desde'] and p['desde'] >= '2021-01-01':
+            if p['desde'] and p['desde'] >= '2016-01-01':
                 days.add(p['desde'])
     parent = {bid:bid for bid in names}
     def root(bid):

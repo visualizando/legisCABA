@@ -1,10 +1,10 @@
-import {officialism,filterBallots,annualSeries,blockKey,blockName} from './votes-model.mjs?v=20261015-historico';
+import {officialism,filterBallots,annualSeries,blockKey,blockName} from './votes-model.mjs?v=20261015-tow-propio';
 import {categories,normalize} from './model.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>new Intl.NumberFormat('es-AR').format(n);
 const percent=n=>n===null?'Sin votos':new Intl.NumberFormat('es-AR',{style:'percent',maximumFractionDigits:1}).format(n);
-let data,historic,loading=false,page=0,currentIds,selectedSeries=null;
+let data,loading=false,page=0,currentIds,selectedSeries=null;
 const size=20;
 export async function renderVotes(monitor){
   if(monitor)currentIds=new Set(monitor.legisladores.filter(p=>p.activo).map(p=>p.id));
@@ -12,10 +12,10 @@ export async function renderVotes(monitor){
   if(loading)return;
   loading=true;$('#votes-state').textContent='Consultando la base de votaciones…';
   try{
-    const responses=await Promise.all([fetch('data/votaciones.json',{cache:'no-cache'}),fetch('data/oficialometro-historico.json')]);
-    if(responses.some(r=>!r.ok))throw new Error('No se pudo leer la base');
-    [data,historic]=await Promise.all(responses.map(r=>r.json()));
-    const years=[...new Set([...data.votaciones.map(v=>v.fecha.slice(0,4)),...historic.series.flatMap(s=>s.datos.map(([y])=>String(y)))])].sort().reverse();
+    const response=await fetch('data/votaciones.json',{cache:'no-cache'});
+    if(!response.ok)throw new Error('No se pudo leer la base');
+    data=await response.json();
+    const years=[...new Set(data.votaciones.map(v=>v.fecha.slice(0,4)))].sort().reverse();
     $('#votes-year').innerHTML='<option value="all">Todo el histórico</option>'+years.map(y=>`<option>${y}</option>`).join('');
     ['#votes-year','#votes-category','#votes-contested','#votes-active'].forEach(id=>$(id).addEventListener('change',()=>{page=0;render();}));
     $('#votes-grouped').addEventListener('change',()=>{page=0;selectedSeries=null;render();});
@@ -41,15 +41,15 @@ function color(id){
   return '#65796c';
 }
 function render(){
-  const f=filters(),result=officialism(data,f),annual=annualSeries(data,historic,f);
+  const f=filters(),result=officialism(data,f),annual=annualSeries(data,f);
   $('#votes-state').textContent=`${fmt(data.resumen.votaciones)} votaciones nominales desde ${data.desde.slice(0,4)} · ${fmt(data.resumen.votos)} registros individuales · Consulta: ${new Date(data.actualizado).toLocaleDateString('es-AR')}`;
-  $('#votes-subtitle').textContent='Coincidencia con la mayoría del PRO: Unión Pro → Vamos Juntos → Vamos por más. Cada voto emitido cuenta una vez.';
-  const legacyYear=annual.compatible&&f.year!=='all'&&Number(f.year)<annual.cutover;
-  $('#votes-denominator').textContent=legacyYear?'Gráfico y porcentajes: agregado del Observable. Las votaciones nominales del mismo año, cuando están disponibles, se exploran más abajo.':`Base nominal ${f.year==='all'?'2021–'+data.hasta.slice(0,4):f.year}: ${fmt(result.eligible)} votaciones comparables. ${fmt(result.withoutReference)} sin mayoría definida o sin votos emitidos del PRO.${result.inconsistent?` ${fmt(result.inconsistent)} excluidas por inconsistencias.`:''} “No votó” queda fuera del porcentaje.`;
-  $('#votes-history-note').textContent=(annual.compatible?'2016–2022: porcentajes agregados del Observable (círculos vacíos). Desde 2023: votos oficiales recalculados (círculos llenos). El enlace punteado marca el cambio de fuente y método; no presupone equivalencia exacta.':'Los años con solo porcentajes agregados del Observable se omiten: no permiten recalcular estos filtros. Se muestran únicamente votos nominales compatibles.')+` ${data.hasta.slice(0,4)} es parcial.`;
+  $('#votes-subtitle').textContent='Promedio de las tasas individuales de coincidencia con el PRO, siguiendo el criterio publicado por Andy Tow.';
+  $('#votes-denominator').textContent=`${fmt(result.eligible)} votaciones con posición mayoritaria definida del PRO. ${fmt(result.withoutReference)} excluidas por empate o falta de referencia.${result.inconsistent?` ${fmt(result.inconsistent)} excluidas por inconsistencias.`:''} “No votó” se cuenta como posición y forma parte del denominador individual.`;
+  const first=data.cobertura_anual?.find(y=>y.primera)?.primera||data.desde;
+  $('#votes-history-note').textContent=`Toda la serie se calcula con nuestro scrapeo de votos oficiales. Primera votación publicada recuperada: ${first}. ${first.slice(0,4)} comienza en esa fecha; ${data.hasta.slice(0,4)} es parcial. Todos los filtros se aplican a todo el histórico disponible.`;
   renderTrend(annual.series);
-  const rows=legacyYear?annual.series.flatMap(s=>s.points.filter(p=>p.year===Number(f.year)).map(p=>({id:s.id,name:s.name,rate:p.rate,total:null}))):result.rows;
-  $('#votes-ranking').innerHTML=rows.length?rows.map(g=>`<div class="vote-rank"><div class="vote-rank-label"><strong>${esc(g.name)}</strong><span>${percent(g.rate)}</span></div><div class="vote-track" aria-hidden="true"><i style="width:${(g.rate??0)*100}%;background:${color(g.id)}"></i></div><p>${g.total===null?'Agregado del Observable · sin denominadores nominales':`${fmt(g.matches)} de ${fmt(g.total)} votos coincidentes · ${fmt(g.ballots)} votaciones · ${fmt(g.nonvotes)} sin voto emitido`}</p></div>`).join(''):'<p class="empty">No hay votos comparables con estos filtros.</p>';
+  const rows=result.rows;
+  $('#votes-ranking').innerHTML=rows.length?rows.map(g=>`<div class="vote-rank"><div class="vote-rank-label"><strong>${esc(g.name)}</strong><span>${percent(g.rate)}</span></div><div class="vote-track" aria-hidden="true"><i style="width:${(g.rate??0)*100}%;background:${color(g.id)}"></i></div><p>${fmt(g.people)} legisladores · ${fmt(g.ballots)} votaciones · ${fmt(g.total)} registros · ${fmt(g.nonvotes)} “no votó”</p></div>`).join(''):'<p class="empty">No hay votos comparables con estos filtros.</p>';
   renderTable(annual.series);renderContinuities();
   $('#votes-quality').textContent=`Se conservan ${fmt(data.resumen.sin_bloque_historico)} registros sin bloque histórico y ${fmt(data.resumen.recuentos_distintos_60)} votaciones con recuento distinto de 60 personas. ${fmt(data.resumen.totales_inconsistentes)} votaciones inconsistentes se excluyen del indicador. ${fmt(data.resumen.sin_categoria||0)} votaciones no tienen categoría identificada. Una sesión sin registros no prueba que no se haya votado.`;
   renderList();
@@ -73,18 +73,14 @@ function drawTrend(series){
   svg.append('title').text('Cómo cambia la coincidencia de cada bloque con el oficialismo');
   svg.append('g').attr('class','chart-grid').attr('transform',`translate(${m.left},0)`).call(d3.axisLeft(y).tickValues([0,.25,.5,.75,1]).tickSize(-(w-m.right-m.left)).tickFormat(v=>percent(v)));
   svg.append('g').attr('transform',`translate(0,${h-m.bottom})`).call(d3.axisBottom(x).tickValues(d3.range(min,max+1)).tickFormat(d3.format('d')));
-  if(min<2023&&max>=2023){
-    svg.append('line').attr('x1',x(2022.5)).attr('x2',x(2022.5)).attr('y1',m.top).attr('y2',h-m.bottom).attr('stroke','#a7afaa').attr('stroke-dasharray','3 4');
-    svg.append('text').attr('x',x(2022.5)+6).attr('y',18).attr('class','vote-chart-note').text('Desde 2023: datos nominales');
-  }
   const endpoints=[];
   for(const s of selected){
     const g=svg.append('g'),c=color(s.id);
     for(let i=1;i<s.points.length;i++){
       const a=s.points[i-1],b=s.points[i];if(b.year-a.year!==1)continue;
-      g.append('line').attr('x1',x(a.year)).attr('y1',y(a.rate)).attr('x2',x(b.year)).attr('y2',y(b.rate)).attr('stroke',c).attr('stroke-width',2).attr('stroke-dasharray',a.source!==b.source?'4 4':null);
+      g.append('line').attr('x1',x(a.year)).attr('y1',y(a.rate)).attr('x2',x(b.year)).attr('y2',y(b.rate)).attr('stroke',c).attr('stroke-width',2);
     }
-    g.selectAll('circle').data(s.points).join('circle').attr('cx',p=>x(p.year)).attr('cy',p=>y(p.rate)).attr('r',3.5).attr('stroke',c).attr('stroke-width',1.5).attr('fill',p=>p.source==='observable'?'var(--paper)':c).append('title').text(p=>`${s.name} · ${p.year}: ${percent(p.rate)} · ${p.source==='observable'?'Observable, porcentaje agregado':`${fmt(p.matches)} de ${fmt(p.total)} votos`}`);
+    g.selectAll('circle').data(s.points).join('circle').attr('cx',p=>x(p.year)).attr('cy',p=>y(p.rate)).attr('r',3.5).attr('stroke',c).attr('stroke-width',1.5).attr('fill',c).append('title').text(p=>`${s.name} · ${p.year}: ${percent(p.rate)} · ${fmt(p.people)} legisladores · ${fmt(p.total)} registros`);
     const last=s.points.at(-1);endpoints.push({s,last,natural:y(last.rate),label:y(last.rate),c});
   }
   endpoints.sort((a,b)=>a.label-b.label);
@@ -104,12 +100,12 @@ function drawTrend(series){
       const [px,py]=d3.pointer(event,svg.node()),p=points[nearest.find(px,py)];
       highlight.attr('cx',x(p.year)).attr('cy',y(p.rate)).attr('stroke',p.color).attr('opacity',1);
       const box=highlight.node().getBoundingClientRect();
-      tip.text(`${p.name} · ${p.year}: ${percent(p.rate)} · ${p.source==='observable'?'Observable':fmt(p.total)+' votos'}`).style('left',`${Math.min(window.innerWidth-160,Math.max(160,box.x+box.width/2))}px`).style('top',`${box.y-12}px`).style('opacity',1);
+      tip.text(`${p.name} · ${p.year}: ${percent(p.rate)} · ${fmt(p.people)} legisladores · ${fmt(p.total)} registros`).style('left',`${Math.min(window.innerWidth-160,Math.max(160,box.x+box.width/2))}px`).style('top',`${box.y-12}px`).style('opacity',1);
     }).on('pointerleave',()=>{tip.style('opacity',0);highlight.attr('opacity',0);});
 }
 function renderTable(series){
   const years=[...new Set(series.flatMap(s=>s.points.map(p=>p.year)))].sort();
-  $('#votes-years').innerHTML=`<div class="table-scroll"><table><caption>Coincidencia anual con el PRO · ○ Observable · ● datos nominales</caption><thead><tr><th scope="col">Bloque / trayectoria</th>${years.map(y=>`<th scope="col">${y}</th>`).join('')}</tr></thead><tbody>${series.map(s=>`<tr><th scope="row">${esc(s.name)}</th>${years.map(year=>{const p=s.points.find(p=>p.year===year);return `<td>${p?`${p.source==='observable'?'○':'●'} ${percent(p.rate)}`:'—'}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div>`;
+  $('#votes-years').innerHTML=`<div class="table-scroll"><table><caption>Tasa de conformidad anual con el PRO · promedio por legislador</caption><thead><tr><th scope="col">Bloque / trayectoria</th>${years.map(y=>`<th scope="col">${y}</th>`).join('')}</tr></thead><tbody>${series.map(s=>`<tr><th scope="row">${esc(s.name)}</th>${years.map(year=>{const p=s.points.find(p=>p.year===year);return `<td>${p?percent(p.rate):'—'}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 function renderContinuities(){
   $('#votes-continuities').innerHTML=`<p>Se unifican movimientos simultáneos de al menos dos legisladores cuando representan al menos el 80% de quienes continuaban en el bloque de origen y de quienes continuaban en el de destino. Se cuentan solo personas con bloque identificado antes y después. Las escisiones y las fusiones sin esa continuidad permanecen separadas. Se conservan los nombres originales en cada voto.</p><div class="table-scroll"><table><thead><tr><th>Origen</th><th>Continuidad</th><th>Fecha</th><th>Movimiento</th><th>Tratamiento</th></tr></thead><tbody>${(data.continuidades||[]).map(c=>`<tr><td>${esc(c.nombre_origen||data.bloques[c.desde]||c.desde)}</td><td>${esc(c.nombre_destino||data.bloques[c.hacia]||c.hacia)}</td><td>${c.fecha}</td><td>${c.legisladores.length}/${c.continuaban_origen} en origen · ${c.legisladores.length}/${c.continuaban_destino} en destino</td><td>${c.unificados?'Unificados':'Separados'}</td></tr>`).join('')}</tbody></table></div>`;

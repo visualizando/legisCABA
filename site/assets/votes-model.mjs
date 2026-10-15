@@ -1,11 +1,12 @@
-const choices = new Set(['AFIRMATIVO','NEGATIVO','ABSTENCIÓN']);
+// Tow treats non-participation as a position, not as a missing denominator.
+// CABA labels that position NO VOTÓ; the independent presence field is preserved.
+const choices=new Set(['AFIRMATIVO','NEGATIVO','ABSTENCIÓN','NO VOTÓ']);
 export function majority(votes){
-  const emitted=votes.filter(v=>choices.has(v.voto));
-  for(const value of choices)if(emitted.filter(v=>v.voto===value).length>emitted.length/2)return value;
-  return null;
+  const counts=new Map();
+  for(const v of votes)if(choices.has(v.voto))counts.set(v.voto,(counts.get(v.voto)||0)+1);
+  const ranked=[...counts].sort((a,b)=>b[1]-a[1]);
+  return ranked.length&&(!ranked[1]||ranked[0][1]>ranked[1][1])?ranked[0][0]:null;
 }
-
-// Each emitted individual vote has equal weight. Non-votes never count as disagreement.
 export const blockKey=(data,id,grouped=true)=>grouped?(data.bloque_trayectoria?.[id]||id):id;
 export const blockName=(data,id,grouped=true)=>grouped?(data.trayectorias?.[id]?.nombre||data.bloques[id]):data.bloques[id];
 export function filterBallots(data,{year='all',category='all',contested=false}={}){
@@ -18,45 +19,39 @@ export function officialism(data,{year='all',category='all',reference=data.refer
   const ballots=filterBallots(data,{year,category,contested});
   for(const b of ballots){
     if(b.totales_consistentes===false){inconsistent++;continue;}
-    const position=majority(b.votos.filter(v=>reference.includes(blockKey(data,v.bloque,grouped))));
-    if(!position){withoutReference++;continue;}
+    // Use the historical governing bloc, regardless of the display grouping/filter.
+    const position=majority(b.votos.filter(v=>reference.includes(v.bloque)));
+    if(position===null){withoutReference++;continue;}
     eligible++;
     for(const v of b.votos){
-      if(!v.bloque)continue;
-      if(activeIds&&!activeIds.has(v.legislador))continue;
+      if(!v.bloque||!v.legislador||!choices.has(v.voto)||activeIds&&!activeIds.has(v.legislador))continue;
       const key=blockKey(data,v.bloque,grouped);
-      if(!groups.has(key))groups.set(key,{id:key,name:blockName(data,key,grouped),matches:0,total:0,nonvotes:0,ballots:new Set()});
-      const g=groups.get(key);
-      if(!choices.has(v.voto)){g.nonvotes++;continue;}
-      g.total++;g.matches+=Number(v.voto===position);g.ballots.add(b.id);
+      if(!groups.has(key))groups.set(key,{id:key,name:blockName(data,key,grouped),matches:0,total:0,nonvotes:0,ballots:new Set(),members:new Map()});
+      const g=groups.get(key),match=Number(v.voto===position);
+      g.total++;g.matches+=match;g.nonvotes+=Number(v.voto==='NO VOTÓ');g.ballots.add(b.id);
+      if(!g.members.has(v.legislador))g.members.set(v.legislador,{id:v.legislador,matches:0,total:0});
+      const member=g.members.get(v.legislador);member.total++;member.matches+=match;
     }
   }
-  return {eligible,withoutReference,inconsistent,ballots:ballots.length,rows:[...groups.values()].map(g=>({...g,ballots:g.ballots.size,rate:g.total?g.matches/g.total:null})).sort((a,b)=>(b.rate??-1)-(a.rate??-1)||a.name.localeCompare(b.name,'es'))};
+  const rows=[...groups.values()].map(g=>{
+    const individuals=[...g.members.values()].map(p=>({...p,rate:p.matches/p.total}));
+    const {members,...rest}=g;
+    return {...rest,ballots:g.ballots.size,people:individuals.length,individuals,
+      rate:individuals.length?individuals.reduce((sum,p)=>sum+p.rate,0)/individuals.length:null};
+  }).sort((a,b)=>(b.rate??-1)-(a.rate??-1)||a.name.localeCompare(b.name,'es'));
+  return {eligible,withoutReference,inconsistent,ballots:ballots.length,rows};
 }
 
-export function annualSeries(data,historic,options={}){
-  const years=[...new Set(data.votaciones.map(v=>v.fecha.slice(0,4)))].sort();
-  const reference=options.reference||data.referencia_predeterminada;
-  const compatible=(options.category||'all')==='all'&&!options.contested&&!options.activeIds&&options.grouped!==false&&reference.every(id=>['119','86','83','7'].includes(id));
-  const cutover=historic?Math.max(...historic.series.flatMap(s=>s.datos.map(([y])=>y)))+1:Number(years[0]);
-  const series=new Map();
+// One source and one calculation for every year. Observable is only a comparison archive.
+export function annualSeries(data,options={}){
+  const years=[...new Set(data.votaciones.map(v=>v.fecha.slice(0,4)))].sort(),series=new Map();
   for(const year of years){
     if(options.year&&options.year!=='all'&&options.year!==year)continue;
-    if(compatible&&historic&&Number(year)<cutover)continue;
     for(const row of officialism(data,{...options,year}).rows){
       if(!series.has(row.id))series.set(row.id,{id:row.id,name:row.name,points:[]});
-      if(row.rate!==null)series.get(row.id).points.push({year:Number(year),rate:row.rate,total:row.total,matches:row.matches,source:'oficial'});
+      if(row.rate!==null)series.get(row.id).points.push({year:Number(year),rate:Math.round(row.rate*10000)/10000,
+        total:row.total,matches:row.matches,people:row.people,source:'oficial'});
     }
   }
-  if(compatible&&historic){
-    for(const h of historic.series){
-      if(h.nombre==='Total')continue;
-      const key=h.bloque_enlace?blockKey(data,h.bloque_enlace):h.id;
-      const points=h.datos.filter(([year])=>year<cutover&&(!options.year||options.year==='all'||String(year)===options.year));
-      if(!points.length)continue;
-      if(!series.has(key))series.set(key,{id:key,name:blockName(data,key)||h.nombre,points:[]});
-      series.get(key).points.push(...points.map(([year,rate])=>({year,rate,total:null,matches:null,source:'observable'})));
-    }
-  }
-  return {compatible,cutover,series:[...series.values()].map(s=>({...s,points:s.points.sort((a,b)=>a.year-b.year)})).sort((a,b)=>a.name.localeCompare(b.name,'es'))};
+  return {series:[...series.values()].sort((a,b)=>a.name.localeCompare(b.name,'es'))};
 }

@@ -1,4 +1,4 @@
-"""Recolecta votaciones nominales desde 2021 y conserva observaciones en SQLite."""
+"""Recolecta votaciones nominales desde 2016 y conserva observaciones en SQLite."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timezone
@@ -12,7 +12,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 
 BASE = 'https://parlamentaria.legislatura.gob.ar/'
-START = '2021-01-01'
+START = '2016-01-01'
 RESUME = False
 
 
@@ -146,13 +146,27 @@ def export(db, now, end):
         'totales_inconsistentes': sum(not v['totales_consistentes'] for v in output),
         'registros_fuente': sum(len(rows) for rows in details.values()),
         'sin_categoria': sum(not b['categorias'] for b in output)}
+    coverage = []
+    for year in range(int(START[:4]), int(end[:4])+1):
+        annual_sessions = [s for s in sessions.values() if iso(s['fch_sesion_lp']).startswith(str(year))]
+        annual_votes = [b for b in output if b['fecha'].startswith(str(year))]
+        coverage.append({'anio': year, 'sesiones':len(annual_sessions),
+            'sesiones_con_votos':len({b['sesion'] for b in annual_votes}), 'votaciones':len(annual_votes),
+            'primera':min((b['fecha'] for b in annual_votes),default=None),
+            'ultima':max((b['fecha'] for b in annual_votes),default=None)})
     from vote_lineages import build_lineages
     lineages = build_lineages(histories, blocks)
     return {'actualizado': now, 'desde': START, 'hasta': end, 'resumen': summary,
         'fuente': BASE + 'pages/ExpedienteBusqueda.aspx',
         'referencia_predeterminada': ['119','86','83','7'],
         'referencia_nombre': 'PRO (nombres históricos)',
-        'legisladores': people, 'bloques': blocks, 'votaciones': output, **lineages}
+        'legisladores': people, 'bloques': blocks, 'votaciones': output, 'cobertura_anual':coverage,
+        'metodologia': {'version':'tow-conformidad-1','referencia':'PRO',
+            'agregacion':'Media aritmética de tasas individuales por legislador, bloque y año',
+            'posiciones':['AFIRMATIVO','NEGATIVO','ABSTENCIÓN','NO VOTÓ'],
+            'fuentes':['https://www.andytow.com/blog/2013/12/02/disciplina-de-bloques/',
+                'https://www.andytow.com/blog/2014/12/07/midiendo-la-conformidad-legislativa/',
+                'https://github.com/hhba/towlandia/blob/master/public/parlalines-d.php']}, **lineages}
 
 
 def main():
@@ -166,7 +180,14 @@ def main():
     RESUME = args.resume
     end = date.fromisoformat(args.until)
     now = datetime.now(timezone.utc).isoformat()
-    sessions = fetch('GetSesionesAvanzado', {'FechaDesde': '01/01/2021', 'FechaHasta': end.strftime('%d/%m/%Y')})
+    # Annual windows avoid server timeouts on broad historical catalog queries.
+    session_map = {}
+    for year in range(int(START[:4]), end.year+1):
+        entries = fetch('GetSesionesAvanzado', {'FechaDesde':f'01/01/{year}',
+            'FechaHasta': min(date(year,12,31),end).strftime('%d/%m/%Y')})
+        for entry in entries:
+            session_map[entry['id_sesion_lp']] = entry
+    sessions = list(session_map.values())
     if not sessions:
         raise ValueError('Catálogo de sesiones vacío; se conserva la base anterior')
     ballots = {}

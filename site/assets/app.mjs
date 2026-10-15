@@ -1,5 +1,5 @@
 import {categories,normalize,signers,filterProjects,personStats,makeGraph,partners,filterProfileProjects} from './model.mjs?v=20261014-filtros';
-import {renderVotes} from './votes.mjs?v=20261015-historico';
+import {renderVotes} from './votes.mjs?v=20261015-tow-propio';
 
 const $ = selector => document.querySelector(selector);
 const fmt = n => new Intl.NumberFormat('es-AR').format(n);

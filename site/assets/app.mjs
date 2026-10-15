@@ -235,16 +235,16 @@ function renderNetwork(){
   const radius=()=>7;
   const thickness=d3.scaleSqrt().domain([minimum,d3.max(graph.edges,e=>e.value)||minimum+1]).range([.5,3]);
   const nodes=graph.nodes.map(n=>({...n})),edges=graph.edges.map(e=>({...e}));
-  const simulation=d3.forceSimulation(nodes).force('link',d3.forceLink(edges).id(n=>n.id).distance(e=>70+70/(1+e.value/30)).strength(.025)).force('charge',d3.forceManyBody().strength(-500).distanceMax(220)).force('center',d3.forceCenter(w/2,h/2)).force('collide',d3.forceCollide(n=>radius(n.total)+18)).stop();
+  const simulation=d3.forceSimulation(nodes).force('link',d3.forceLink(edges).id(n=>n.id).distance(e=>70+70/(1+e.value/30)).strength(.08)).force('charge',d3.forceManyBody().strength(-150).distanceMax(180)).force('center',d3.forceCenter(w/2,h/2)).force('collide',d3.forceCollide(n=>radius(n.total)+7)).stop();
   for(let i=0;i<180;i++)simulation.tick();
-  const extentX=d3.extent(nodes,n=>n.x),extentY=d3.extent(nodes,n=>n.y),scale=Math.min((w-120)/(extentX[1]-extentX[0]||1),(h-120)/(extentY[1]-extentY[0]||1),1.6);
+  const extentX=d3.extent(nodes,n=>n.x),extentY=d3.extent(nodes,n=>n.y),scale=Math.min((w-120)/(extentX[1]-extentX[0]||1),(h-100)/(extentY[1]-extentY[0]||1),1);
   for(const n of nodes){n.x=w/2+(n.x-(extentX[0]+extentX[1])/2)*scale;n.y=h/2+(n.y-(extentY[0]+extentY[1])/2)*scale;}
-  const spacing=d3.forceSimulation(nodes).force('collide',d3.forceCollide(22).iterations(4)).stop();
+  const spacing=d3.forceSimulation(nodes).force('collide',d3.forceCollide(14).iterations(4)).stop();
   for(let i=0;i<100;i++){spacing.tick();for(const n of nodes){n.x=Math.max(26,Math.min(w-70,n.x));n.y=Math.max(26,Math.min(h-26,n.y));}}
   layer.append('g').selectAll('line').data(edges).join('line').attr('class','network-edge').attr('data-a',e=>e.source.id).attr('data-b',e=>e.target.id).attr('x1',e=>e.source.x).attr('y1',e=>e.source.y).attr('x2',e=>e.target.x).attr('y2',e=>e.target.y).attr('stroke-width',e=>thickness(e.value)).append('title').text(e=>`${displayName(e.source.nombre)} / ${displayName(e.target.nombre)}: ${fmt(e.value)} proyectos`);
   const nodeGroup=layer.append('g').selectAll('g').data(nodes).join('g');
   nodeGroup.append('circle').attr('class','network-node').attr('cx',n=>n.x).attr('cy',n=>n.y).attr('r',n=>radius(n.total)).attr('fill',n=>group(n).color).attr('stroke','#596461').attr('stroke-width',1).attr('role','button').attr('tabindex',0).attr('aria-label',n=>`${displayName(n.nombre)}, ${group(n).nombre}, ${n.bloque_referencia}, ${fmt(n.total)} proyectos firmados; explorar conexiones`).on('click',(event,n)=>selectNetworkNode(n.id)).on('keydown',(event,n)=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectNetworkNode(n.id);}}).append('title').text(n=>`${displayName(n.nombre)} · ${group(n).nombre} · ${n.bloque_referencia} · ${fmt(n.total)} proyectos`);
-  const topIds=new Set([...nodes].sort((a,b)=>b.total-a.total).slice(0,4).map(n=>n.id));
+  const topIds=new Set([...nodes].sort((a,b)=>b.total-a.total).slice(0,8).map(n=>n.id));
   nodeGroup.append('text').attr('class','network-label').attr('x',n=>n.x+radius(n.total)+4).attr('y',n=>n.y+3).attr('data-id',n=>n.id).style('display',n=>topIds.has(n.id)?null:'none').text(n=>displayName(n.nombre).split(',')[0]);
   graph.topIds=topIds;
   if(selectedNode&&!graph.nodes.some(n=>n.id===selectedNode))selectedNode=null;

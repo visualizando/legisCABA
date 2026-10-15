@@ -52,6 +52,6 @@ Los porcentajes anteriores del Observable quedan archivados como referencia, sin
 
 ## Presentación y exportación
 
-La sección usa controles compactos compartidos con el resto del sitio y un gráfico de 640 unidades de alto, con rótulos legibles. Al apuntar a un punto o enfocar una serie con teclado se destaca la línea completa. Las marcas verticales punteadas indican 2019 y 2023. Las explicaciones y la cobertura están en Metodología, debajo del gráfico.
+La sección usa controles compactos compartidos con el resto del sitio y un gráfico de 640 unidades de alto, con rótulos legibles. Al apuntar a un punto o enfocar una serie con teclado se destaca la línea completa. Los tramos se rotulan Larreta I, Larreta II y J. Macri I, con separadores punteados en 2019 y 2023. En la vista histórica el eje comienza en 2015, sin crear votos ni porcentajes para ese año; los datos siguen comenzando en agosto de 2016. Las explicaciones y la cobertura están en Metodología, debajo del gráfico.
 
 Copiar imagen escribe un PNG en el portapapeles mediante Clipboard API; Bajar imagen descarga el mismo PNG. La exportación incluye medida, filtros, persona elegida y fuente, con resolución doble y estilos resueltos. No incorpora el estado de resaltado temporal ni los controles. Si el navegador impide copiar, se informa y se ofrece descargar.

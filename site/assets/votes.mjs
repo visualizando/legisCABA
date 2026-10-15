@@ -1,7 +1,7 @@
-import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,blockKey,expandVoteTypes} from './votes-model.mjs?v=20261015-anotaciones';
-import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-anotaciones';
-import {personAutocomplete} from './person-autocomplete.mjs?v=20261015-anotaciones';
-import {chartPng} from './chart-image.mjs?v=20261015-anotaciones';
+import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,blockKey,expandVoteTypes} from './votes-model.mjs?v=20261015-gestiones';
+import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-gestiones';
+import {personAutocomplete} from './person-autocomplete.mjs?v=20261015-gestiones';
+import {chartPng} from './chart-image.mjs?v=20261015-gestiones';
 import {categories,normalize} from './model.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -79,7 +79,7 @@ function drawTrend(series){
   $('#votes-copy').disabled=$('#votes-download').disabled=!selected.length;
   renderAccessibleTable(selected);
   if(!selected.length){root.append('p').attr('class','empty').text('Sin votos comparables con los filtros seleccionados. Probá otro año o tipo, o desactivá “Solo legisladores actuales”.');return;}
-  const years=selected.flatMap(s=>s.points.map(p=>p.year)),min=Math.min(...years),max=Math.max(...years);
+  const years=selected.flatMap(s=>s.points.map(p=>p.year)),min=$('#votes-year').value==='all'?2015:Math.min(...years),max=Math.max(...years);
   const w=Math.max(680,$('#votes-trend').clientWidth),h=640,m={top:64,right:230,bottom:52,left:52};
   const x=d3.scaleLinear().domain(min===max?[min-.5,max+.5]:[min,max]).range([m.left,w-m.right]);
   const y=d3.scaleLinear().domain([0,1]).range([h-m.bottom,m.top]);
@@ -90,8 +90,11 @@ function drawTrend(series){
   for(const year of [2019,2023])if(year>=min&&year<=max){
     const marker=svg.append('g').attr('class','vote-government');
     marker.append('line').attr('x1',x(year)).attr('x2',x(year)).attr('y1',m.top-8).attr('y2',h-m.bottom).attr('stroke','#9aa29c').attr('stroke-dasharray','4 5');
-    marker.append('text').attr('x',x(year)+4).attr('y',m.top-30).attr('fill','#64716a').text(year);
-    marker.append('text').attr('x',x(year)+4).attr('y',m.top-14).attr('fill','#64716a').text('Cambio de gobierno');
+  }
+  for(const period of [{start:2015,end:2019,label:'Larreta I'},{start:2019,end:2023,label:'Larreta II'},{start:2023,end:Infinity,label:'J. Macri I'}]){
+    if(period.end<=min||period.start>max)continue;
+    const center=(Math.max(min,period.start)+Math.min(max,period.end))/2;
+    svg.append('g').attr('class','vote-government').append('text').attr('x',x(center)).attr('y',m.top-22).attr('text-anchor','middle').attr('fill','#64716a').text(period.label);
   }
   const endpoints=[],groups=new Map(),labels=new Map();
   for(const s of selected){

@@ -74,3 +74,6 @@ footer.wrap{display:flex;align-items:start;flex-wrap:wrap;gap:24px;justify-conte
 #view-ficha .profile-heading>.profile-block-band{width:auto;justify-self:stretch}
 
 #view-ficha .profile-heading .avatar{border:0;border-radius:5px;overflow:hidden}
+
+.network-intro{margin:4px 0 24px}.network-intro h2{font-size:32px;margin-bottom:8px}.network-intro p{font-size:14px;color:var(--muted)}
+#view-red .network-layout{grid-template-columns:1fr}#view-red .network-canvas{border:0}#network{display:block;width:100%;height:auto}#network-legend{width:fit-content;max-width:100%;margin:16px auto;padding:8px 12px;border-radius:6px;background:rgb(180 185 180 / 20%);justify-content:center}#network-legend i{border:0;border-radius:50%}#network-detail{border:0;border-top:1px solid var(--line);padding:20px}#view-red .network-edge{stroke-opacity:.12}

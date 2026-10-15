@@ -8,7 +8,7 @@ const cat = id => categories.find(c=>c.id===id);
 const group = person => dataset.grupos_visuales?.find(g=>g.id===person?.grupo_visual)||dataset.grupos.find(g=>g.id===person?.grupo)||{nombre:person?.bloque_referencia||'Bloque no disponible',color:'#727a77'};
 function groupBadge(person){const g=group(person);return `<span class="group-badge" style="--group:${g.color}"><i aria-hidden="true"></i>${esc(person.bloque_referencia||g.nombre)}</span>`;}
 function avatar(person,profile=false){
-  return `<span class="avatar${person.foto?' portrait':''}" aria-hidden="true"${profile?` style="border-left:5px solid ${group(person).color}"`:''}>${esc(initials(person.nombre))}${person.foto?`<img src="${esc(person.foto)}" alt="" loading="${profile?'eager':'lazy'}" decoding="async" referrerpolicy="no-referrer">`:''}</span>`;
+  return `<span class="avatar${person.foto?' portrait':''}" aria-hidden="true">${esc(initials(person.nombre))}${person.foto?`<img src="${esc(person.foto)}" alt="" loading="${profile?'eager':'lazy'}" decoding="async" referrerpolicy="no-referrer">`:''}</span>`;
 }
 function portraitFallbacks(){
   document.querySelectorAll('.portrait img').forEach(img=>img.addEventListener('error',()=>{img.remove();},{once:true}));
@@ -227,18 +227,20 @@ function renderNetwork(){
   const minimum=Number($('#edge-min').value),mode=$('#edge-mode').value;
   graph=makeGraph(selected,visiblePeople,mode,minimum);graphZoom=null;const svg=d3.select('#network');svg.selectAll('*').remove();
   $('#zoom-in').disabled=!graph.nodes.length;$('#zoom-out').disabled=!graph.nodes.length;
-  const w=Math.max(320,$('#network').clientWidth),h=Math.min(600,Math.max(420,w/1.4));svg.attr('viewBox',`0 0 ${w} ${h}`);svg.append('title').text('Red de proyectos compartidos entre legisladores');
+  const w=Math.max(320,$('#network').clientWidth),h=Math.min(720,Math.max(560,w*.8));svg.attr('viewBox',`0 0 ${w} ${h}`);svg.append('title').text('Red de proyectos compartidos entre legisladores');
   $('#network-stats').textContent=`${graph.nodes.length} nodos · ${fmt(graph.edges.length)} vínculos · ${graph.omitted} sin vínculos visibles`;
   groupLegend('#network-legend');
-  if(!graph.nodes.length){svg.append('text').attr('x',w/2).attr('y',h/2).attr('text-anchor','middle').attr('fill','#596461').text('Sin conexiones. Reducí el mínimo.');selectedNode=null;renderNetworkDetail();$('#edge-table').innerHTML='<p class="empty">Sin conexiones para estos filtros.</p>';return;}
+  if(!graph.nodes.length){svg.append('text').attr('x',w/2).attr('y',h/2).attr('text-anchor','middle').attr('fill','#596461').text('Sin conexiones. Reducí el mínimo.');selectedNode=null;renderNetworkDetail();return;}
   const layer=svg.append('g');graphZoom=d3.zoom().scaleExtent([.35,4]).filter(event=>!event.button&&(event.type!=='wheel'||event.ctrlKey)).on('zoom',event=>layer.attr('transform',event.transform));svg.call(graphZoom).on('dblclick.zoom',null).call(graphZoom.transform,d3.zoomIdentity);
-  const radius=d3.scaleSqrt().domain([0,d3.max(graph.nodes,n=>n.total)]).range([4,19]);
+  const radius=()=>7;
   const thickness=d3.scaleSqrt().domain([minimum,d3.max(graph.edges,e=>e.value)||minimum+1]).range([.5,3]);
   const nodes=graph.nodes.map(n=>({...n})),edges=graph.edges.map(e=>({...e}));
-  const simulation=d3.forceSimulation(nodes).force('link',d3.forceLink(edges).id(n=>n.id).distance(e=>70+70/(1+e.value/30)).strength(.12)).force('charge',d3.forceManyBody().strength(-110)).force('center',d3.forceCenter(w/2,h/2)).force('collide',d3.forceCollide(n=>radius(n.total)+6)).stop();
+  const simulation=d3.forceSimulation(nodes).force('link',d3.forceLink(edges).id(n=>n.id).distance(e=>70+70/(1+e.value/30)).strength(.025)).force('charge',d3.forceManyBody().strength(-500).distanceMax(220)).force('center',d3.forceCenter(w/2,h/2)).force('collide',d3.forceCollide(n=>radius(n.total)+18)).stop();
   for(let i=0;i<180;i++)simulation.tick();
   const extentX=d3.extent(nodes,n=>n.x),extentY=d3.extent(nodes,n=>n.y),scale=Math.min((w-120)/(extentX[1]-extentX[0]||1),(h-120)/(extentY[1]-extentY[0]||1),1.6);
   for(const n of nodes){n.x=w/2+(n.x-(extentX[0]+extentX[1])/2)*scale;n.y=h/2+(n.y-(extentY[0]+extentY[1])/2)*scale;}
+  const spacing=d3.forceSimulation(nodes).force('collide',d3.forceCollide(22).iterations(4)).stop();
+  for(let i=0;i<100;i++){spacing.tick();for(const n of nodes){n.x=Math.max(26,Math.min(w-70,n.x));n.y=Math.max(26,Math.min(h-26,n.y));}}
   layer.append('g').selectAll('line').data(edges).join('line').attr('class','network-edge').attr('data-a',e=>e.source.id).attr('data-b',e=>e.target.id).attr('x1',e=>e.source.x).attr('y1',e=>e.source.y).attr('x2',e=>e.target.x).attr('y2',e=>e.target.y).attr('stroke-width',e=>thickness(e.value)).append('title').text(e=>`${displayName(e.source.nombre)} / ${displayName(e.target.nombre)}: ${fmt(e.value)} proyectos`);
   const nodeGroup=layer.append('g').selectAll('g').data(nodes).join('g');
   nodeGroup.append('circle').attr('class','network-node').attr('cx',n=>n.x).attr('cy',n=>n.y).attr('r',n=>radius(n.total)).attr('fill',n=>group(n).color).attr('stroke','#596461').attr('stroke-width',1).attr('role','button').attr('tabindex',0).attr('aria-label',n=>`${displayName(n.nombre)}, ${group(n).nombre}, ${n.bloque_referencia}, ${fmt(n.total)} proyectos firmados; explorar conexiones`).on('click',(event,n)=>selectNetworkNode(n.id)).on('keydown',(event,n)=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectNetworkNode(n.id);}}).append('title').text(n=>`${displayName(n.nombre)} · ${group(n).nombre} · ${n.bloque_referencia} · ${fmt(n.total)} proyectos`);
@@ -246,7 +248,7 @@ function renderNetwork(){
   nodeGroup.append('text').attr('class','network-label').attr('x',n=>n.x+radius(n.total)+4).attr('y',n=>n.y+3).attr('data-id',n=>n.id).style('display',n=>topIds.has(n.id)?null:'none').text(n=>displayName(n.nombre).split(',')[0]);
   graph.topIds=topIds;
   if(selectedNode&&!graph.nodes.some(n=>n.id===selectedNode))selectedNode=null;
-  if(selectedNode)highlightNetwork();renderNetworkDetail();renderEdgeTable();
+  if(selectedNode)highlightNetwork();renderNetworkDetail();
 }
 function selectNetworkNode(id){selectedNode=id;highlightNetwork();renderNetworkDetail();}
 function highlightNetwork(){
@@ -265,10 +267,6 @@ function renderNetworkDetail(){
     if(graph.nodes.some(n=>n.id===b.dataset.node))selectNetworkNode(b.dataset.node);else location.hash='ficha/'+b.dataset.node;
   }));
   $('#clear-node').addEventListener('click',()=>{selectedNode=null;highlightNetwork();renderNetworkDetail();});
-}
-function renderEdgeTable(){
-  const rows=[...graph.edges].sort((a,b)=>b.value-a.value).slice(0,100);
-  $('#edge-table').innerHTML=`<p class="note">100 conexiones más frecuentes.</p><div class="table-scroll"><table><thead><tr><th>Legislador/a</th><th>Legislador/a</th><th>Proyectos en común</th></tr></thead><tbody>${rows.map(e=>`<tr><td>${authorLink(peopleById.get(e.source))}</td><td>${authorLink(peopleById.get(e.target))}</td><td>${fmt(e.value)}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function render(){
   $('#profile-back').hidden=route!=='ficha';

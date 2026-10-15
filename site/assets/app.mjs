@@ -226,6 +226,7 @@ function renderAllProjects(){
 function renderNetwork(){
   const minimum=Number($('#edge-min').value),mode=$('#edge-mode').value;
   graph=makeGraph(selected,visiblePeople,mode,minimum);graphZoom=null;const svg=d3.select('#network');svg.selectAll('*').remove();
+  svg.on('click.clear',event=>{if(event.target===svg.node()){selectedNode=null;highlightNetwork();renderNetworkDetail();}});
   $('#zoom-in').disabled=!graph.nodes.length;$('#zoom-out').disabled=!graph.nodes.length;
   const w=Math.max(320,$('#network').clientWidth),h=Math.min(720,Math.max(560,w*.8));svg.attr('viewBox',`0 0 ${w} ${h}`);svg.append('title').text('Red de proyectos compartidos entre legisladores');
   $('#network-stats').textContent=`${graph.nodes.length} nodos · ${fmt(graph.edges.length)} vínculos · ${graph.omitted} sin vínculos visibles`;
@@ -233,7 +234,7 @@ function renderNetwork(){
   if(!graph.nodes.length){svg.append('text').attr('x',w/2).attr('y',h/2).attr('text-anchor','middle').attr('fill','#596461').text('Sin conexiones. Reducí el mínimo.');selectedNode=null;renderNetworkDetail();return;}
   const layer=svg.append('g');graphZoom=d3.zoom().scaleExtent([.35,4]).filter(event=>!event.button&&(event.type!=='wheel'||event.ctrlKey)).on('zoom',event=>layer.attr('transform',event.transform));svg.call(graphZoom).on('dblclick.zoom',null).call(graphZoom.transform,d3.zoomIdentity);
   const radius=()=>7;
-  const thickness=d3.scaleSqrt().domain([minimum,d3.max(graph.edges,e=>e.value)||minimum+1]).range([.5,3]);
+  const thickness=d3.scaleSqrt().domain([minimum,d3.max(graph.edges,e=>e.value)||minimum+1]).range([.8,4]);
   const nodes=graph.nodes.map(n=>({...n})),edges=graph.edges.map(e=>({...e}));
   const simulation=d3.forceSimulation(nodes).force('link',d3.forceLink(edges).id(n=>n.id).distance(e=>70+70/(1+e.value/30)).strength(.08)).force('charge',d3.forceManyBody().strength(-150).distanceMax(180)).force('center',d3.forceCenter(w/2,h/2)).force('collide',d3.forceCollide(n=>radius(n.total)+7)).stop();
   for(let i=0;i<180;i++)simulation.tick();
@@ -241,7 +242,7 @@ function renderNetwork(){
   for(const n of nodes){n.x=w/2+(n.x-(extentX[0]+extentX[1])/2)*scale;n.y=h/2+(n.y-(extentY[0]+extentY[1])/2)*scale;}
   const spacing=d3.forceSimulation(nodes).force('collide',d3.forceCollide(14).iterations(4)).stop();
   for(let i=0;i<100;i++){spacing.tick();for(const n of nodes){n.x=Math.max(26,Math.min(w-70,n.x));n.y=Math.max(26,Math.min(h-26,n.y));}}
-  layer.append('g').selectAll('line').data(edges).join('line').attr('class','network-edge').attr('data-a',e=>e.source.id).attr('data-b',e=>e.target.id).attr('x1',e=>e.source.x).attr('y1',e=>e.source.y).attr('x2',e=>e.target.x).attr('y2',e=>e.target.y).attr('stroke-width',e=>thickness(e.value)).append('title').text(e=>`${displayName(e.source.nombre)} / ${displayName(e.target.nombre)}: ${fmt(e.value)} proyectos`);
+  layer.append('g').selectAll('line').data(edges).join('line').attr('class','network-edge').attr('data-a',e=>e.source.id).attr('data-b',e=>e.target.id).attr('x1',e=>e.source.x).attr('y1',e=>e.source.y).attr('x2',e=>e.target.x).attr('y2',e=>e.target.y).attr('stroke-width',e=>thickness(e.value)).attr('stroke-opacity',.35).append('title').text(e=>`${displayName(e.source.nombre)} / ${displayName(e.target.nombre)}: ${fmt(e.value)} proyectos`);
   const nodeGroup=layer.append('g').selectAll('g').data(nodes).join('g');
   nodeGroup.append('circle').attr('class','network-node').attr('cx',n=>n.x).attr('cy',n=>n.y).attr('r',n=>radius(n.total)).attr('fill',n=>group(n).color).attr('stroke','#596461').attr('stroke-width',1).attr('role','button').attr('tabindex',0).attr('aria-label',n=>`${displayName(n.nombre)}, ${group(n).nombre}, ${n.bloque_referencia}, ${fmt(n.total)} proyectos firmados; explorar conexiones`).on('click',(event,n)=>selectNetworkNode(n.id)).on('keydown',(event,n)=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectNetworkNode(n.id);}}).append('title').text(n=>`${displayName(n.nombre)} · ${group(n).nombre} · ${n.bloque_referencia} · ${fmt(n.total)} proyectos`);
   const topIds=new Set([...nodes].sort((a,b)=>b.total-a.total).slice(0,8).map(n=>n.id));
@@ -254,7 +255,7 @@ function selectNetworkNode(id){selectedNode=id;highlightNetwork();renderNetworkD
 function highlightNetwork(){
   const adjacent=new Set([selectedNode]);for(const e of graph.edges)if(e.source===selectedNode)adjacent.add(e.target);else if(e.target===selectedNode)adjacent.add(e.source);
   d3.select('#network').selectAll('.network-node').attr('opacity',n=>!selectedNode||adjacent.has(n.id)?1:.18).attr('stroke',n=>n.id===selectedNode?'#202726':'#596461').attr('stroke-width',n=>n.id===selectedNode?3:1);
-  d3.select('#network').selectAll('.network-edge').attr('stroke-opacity',e=>!selectedNode ? .2 : (e.source.id===selectedNode||e.target.id===selectedNode ? .75 : .025));
+  d3.select('#network').selectAll('.network-edge').attr('stroke-opacity',e=>!selectedNode ? .35 : (e.source.id===selectedNode||e.target.id===selectedNode ? .85 : .04));
   d3.select('#network').selectAll('.network-label').style('display',n=>n.id===selectedNode||graph.topIds.has(n.id)?null:'none').attr('opacity',n=>!selectedNode||adjacent.has(n.id)?1:.25);
 }
 function renderNetworkDetail(){

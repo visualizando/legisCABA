@@ -164,7 +164,7 @@ def main():
     counts=Counter(a['bloque'] for a in current.values())
     visual_groups=[
         {'id':'peronismo','nombre':'Peronismo','color':'#34aad7'},
-        {'id':'pro-aliados','nombre':'Pro y aliados','color':'#efb118'},
+        {'id':'pro-aliados','nombre':'PRO','color':'#efb118'},
         {'id':'libertarios','nombre':'Libertarios','color':'#c367b3'},
         {'id':'ucr','nombre':'UCR','color':'#e86952'},
         {'id':'izquierda','nombre':'Izquierda','color':'#cb1f00'},
@@ -172,8 +172,7 @@ def main():
     ]
     visual_blocks={
         'Fuerza por Buenos Aires':'peronismo','Unión por la Patria':'peronismo','Frente de Todos':'peronismo',
-        'Vamos por más':'pro-aliados','Vamos Juntos':'pro-aliados','Confianza y Desarrollo':'pro-aliados',
-        'Confianza Publica':'pro-aliados','Volver al Futuro':'pro-aliados',
+        'Vamos por más':'pro-aliados','Vamos Juntos':'pro-aliados','PRO':'pro-aliados',
         'La Libertad avanza':'libertarios','La Libertad Avanza':'libertarios',
         'Republicanos Unidos':'libertarios','Bloque República':'libertarios',
         'Ciudadanos Unidos / UCR':'ucr','UCR / Evolución':'ucr','UCR-Evolución':'ucr',

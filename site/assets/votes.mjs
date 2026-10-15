@@ -1,7 +1,7 @@
-import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,blockKey,expandVoteTypes} from './votes-model.mjs?v=20261015-gestiones';
-import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-gestiones';
-import {personAutocomplete} from './person-autocomplete.mjs?v=20261015-gestiones';
-import {chartPng} from './chart-image.mjs?v=20261015-gestiones';
+import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,blockKey,expandVoteTypes} from './votes-model.mjs?v=20261015-diciembre';
+import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-diciembre';
+import {personAutocomplete} from './person-autocomplete.mjs?v=20261015-diciembre';
+import {chartPng} from './chart-image.mjs?v=20261015-diciembre';
 import {categories,normalize} from './model.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -87,11 +87,15 @@ function drawTrend(series){
   svg.append('title').text(`${measureName()} · El oficialómetro`);
   svg.append('g').attr('class','chart-grid').attr('transform',`translate(${m.left},0)`).call(d3.axisLeft(y).tickValues([0,.25,.5,.75,1]).tickSize(-(w-m.right-m.left)).tickFormat(v=>percent(v)));
   svg.append('g').attr('class','vote-year-axis').attr('transform',`translate(0,${h-m.bottom})`).call(d3.axisBottom(x).tickValues(d3.range(min,max+1)).tickFormat(d3.format('d')));
-  for(const year of [2019,2023])if(year>=min&&year<=max){
+  // Position December 10 within the annual scale, rather than on January 1.
+  const inauguration=year=>year+(Date.UTC(year,11,10)-Date.UTC(year,0,1))/(Date.UTC(year+1,0,1)-Date.UTC(year,0,1));
+  const firstTerm=inauguration(2015),secondTerm=inauguration(2019),macriTerm=inauguration(2023);
+  for(const year of [secondTerm,macriTerm])if(year>=min&&year<=max){
     const marker=svg.append('g').attr('class','vote-government');
+    marker.append('title').text(`Inicio de gestión: 10/12/${Math.floor(year)}`);
     marker.append('line').attr('x1',x(year)).attr('x2',x(year)).attr('y1',m.top-8).attr('y2',h-m.bottom).attr('stroke','#9aa29c').attr('stroke-dasharray','4 5');
   }
-  for(const period of [{start:2015,end:2019,label:'Larreta I'},{start:2019,end:2023,label:'Larreta II'},{start:2023,end:Infinity,label:'J. Macri I'}]){
+  for(const period of [{start:firstTerm,end:secondTerm,label:'Larreta I'},{start:secondTerm,end:macriTerm,label:'Larreta II'},{start:macriTerm,end:Infinity,label:'J. Macri I'}]){
     if(period.end<=min||period.start>max)continue;
     const center=(Math.max(min,period.start)+Math.min(max,period.end))/2;
     svg.append('g').attr('class','vote-government').append('text').attr('x',x(center)).attr('y',m.top-22).attr('text-anchor','middle').attr('fill','#64716a').text(period.label);

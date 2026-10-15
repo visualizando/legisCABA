@@ -20,7 +20,15 @@ El repositorio enlazado por Década Votada conserva el gráfico para cámaras na
 
 Ejemplo de control: una persona con dos coincidencias en dos registros y otra con cero en un registro producen una tasa de bloque de 50%, no de 66,7%. Hay pruebas que distinguen ambas fórmulas, además de pruebas de empates, abstenciones y no participación.
 
-## Ausencia y “NO VOTÓ” en CABA
+## Comparación visible y filtros
+
+El sitio muestra juntas dos medidas: **general**, sobre todas las votaciones seleccionadas, y **con disidencias**, sobre aquellas que registran al menos dos posiciones entre afirmativo, negativo y abstención en todo el recinto. La no participación por sí sola no define una disidencia. Ambas conservan la fórmula individual y el promedio por bloque; cada una tiene su propio denominador y puede incluir distintas personas si faltan registros en el subconjunto. La ausencia de votos comparables se muestra como tal, nunca como 0%.
+
+Los filtros de año, tipos y padrón actual se aplican a las dos medidas, los dos gráficos y la tabla. Las casillas de tipos comparten módulo y estilos con Análisis; seleccionar varios tipos incluye su unión y cada ID se cuenta una sola vez. Se conserva al menos una casilla seleccionada. La selección de bloques se comparte entre los dos gráficos, que usan las mismas escalas. La búsqueda y la selección de todas/con disidencias dentro del explorador solo afectan al listado de votos.
+
+La comparación permite observar el peso de los consensos en la tasa general. En la captura del 15/10/2026, PO en 2025 tiene 108 coincidencias sobre 172 registros (62,8%): 65/70 en asuntos sin disidencias y 43/102 (42,2%) en asuntos con disidencias. Se contrastaron registros completos directamente con la API en los IDs 2252, 2304 y 2439: el primero es una coincidencia afirmativa en una efeméride; los otros son desacuerdos en presupuesto y adhesión al RIGI. El cálculo se verificó también de forma independiente en Python.
+
+## Tratamiento de la no participación
 
 La fuente porteña entrega `votacion_tipo_descripcion` y `presente_descripcion` por separado. El primero utiliza “NO VOTÓ” tanto para personas informadas como presentes como para personas ausentes. Para aplicar el tratamiento de la no participación como posición se utiliza literalmente “NO VOTÓ” como cuarta categoría, sin convertirla en una afirmación de ausencia física.
 

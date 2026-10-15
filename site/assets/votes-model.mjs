@@ -9,14 +9,15 @@ export function majority(votes){
 }
 export const blockKey=(data,id,grouped=true)=>grouped?(data.bloque_trayectoria?.[id]||id):id;
 export const blockName=(data,id,grouped=true)=>grouped?(data.trayectorias?.[id]?.nombre||data.bloques[id]):data.bloques[id];
-export function filterBallots(data,{year='all',category='all',contested=false}={}){
+export function filterBallots(data,{year='all',category='all',types=null,contested=false}={}){
   return data.votaciones.filter(b=>(year==='all'||b.fecha.startsWith(year))&&
     (category==='all'||(category==='sin-datos'?!b.categorias?.length:b.categorias?.includes(category)))&&
+    (types===null||(b.categorias?.length?b.categorias.some(c=>types.includes(c)):types.includes('sin-datos')))&&
     (!contested||[b.positivos,b.negativos,b.abstenciones].filter(n=>n>0).length>1));
 }
-export function officialism(data,{year='all',category='all',reference=data.referencia_predeterminada,contested=false,grouped=true,activeIds=null}={}){
+export function officialism(data,{year='all',category='all',types=null,reference=data.referencia_predeterminada,contested=false,grouped=true,activeIds=null}={}){
   const groups=new Map();let eligible=0,withoutReference=0,inconsistent=0;
-  const ballots=filterBallots(data,{year,category,contested});
+  const ballots=filterBallots(data,{year,category,types,contested});
   for(const b of ballots){
     if(b.totales_consistentes===false){inconsistent++;continue;}
     // Use the historical governing bloc, regardless of the display grouping/filter.
@@ -40,6 +41,13 @@ export function officialism(data,{year='all',category='all',reference=data.refer
       rate:individuals.length?individuals.reduce((sum,p)=>sum+p.rate,0)/individuals.length:null};
   }).sort((a,b)=>(b.rate??-1)-(a.rate??-1)||a.name.localeCompare(b.name,'es'));
   return {eligible,withoutReference,inconsistent,ballots:ballots.length,rows};
+}
+
+export function compareOfficialism(data,options={}){
+  const general=officialism(data,{...options,contested:false});
+  const contested=officialism(data,{...options,contested:true});
+  const byId=new Map(contested.rows.map(row=>[row.id,row]));
+  return {general,contested,rows:general.rows.map(row=>({...row,contested:byId.get(row.id)||null}))};
 }
 
 // One source and one calculation for every year. Observable is only a comparison archive.

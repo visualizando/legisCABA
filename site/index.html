@@ -9,9 +9,9 @@
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
   <link rel="stylesheet" href="assets/compact.css?v=20261014-network-checkboxes">
-  <link rel="stylesheet" href="assets/votes.css?v=20261015-tow-propio">
+  <link rel="stylesheet" href="assets/votes.css?v=20261015-comparacion">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261015-tow-propio"></script>
+  <script type="module" src="assets/app.mjs?v=20261015-comparacion"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -63,7 +63,7 @@
 
     <section id="view-red" class="view" hidden>
       <header class="network-intro"><h2>El conexionódromo</h2><p>¿Cómo se relacionan entre sí los legisladores según las coautorías de proyectos?</p></header>
-      <div class="network-controls"><fieldset id="network-types" class="project-status-checks"><legend>Tipo de proyecto</legend><label><input type="checkbox" value="ley" checked>Leyes</label><label><input type="checkbox" value="informes" checked>Pedidos de informes*</label><label><input type="checkbox" value="declaracion" checked>Declaraciones</label><label><input type="checkbox" value="resolucion" checked>Otras resoluciones</label></fieldset><label>Vínculo mínimo<select id="edge-min"><option value="5">5 proyectos compartidos</option><option value="15" selected>15 proyectos compartidos</option><option value="30">30 proyectos compartidos</option><option value="60">60 proyectos compartidos</option></select></label><label>Modelo de vínculo<select id="edge-mode"><option value="all">Todas las firmas entre sí</option><option value="author">Autor/a con coautores</option></select></label></div>
+      <div class="network-controls"><fieldset id="network-types" class="project-status-checks"><legend>Tipo de proyecto</legend></fieldset><label>Vínculo mínimo<select id="edge-min"><option value="5">5 proyectos compartidos</option><option value="15" selected>15 proyectos compartidos</option><option value="30">30 proyectos compartidos</option><option value="60">60 proyectos compartidos</option></select></label><label>Modelo de vínculo<select id="edge-mode"><option value="all">Todas las firmas entre sí</option><option value="author">Autor/a con coautores</option></select></label></div>
       <p class="note">Cada círculo representa un legislador. Las líneas conectan proyectos compartidos. El color indica el espacio político.</p><div class="network-layout"><div class="network-canvas"><div class="network-graph-tools"><button type="button" id="network-reset" class="quiet">Centrar red ↺</button><div class="zoom-buttons"><button type="button" id="zoom-in" aria-label="Acercar red">+</button><button type="button" id="zoom-out" aria-label="Alejar red">−</button></div></div><div id="network-stats" class="network-stats"></div><svg id="network" aria-label="Red de proyectos compartidos; seleccionar un nodo para explorar sus conexiones"></svg><div id="network-legend" class="legend"></div></div><aside class="network-detail" id="network-detail" aria-live="polite"></aside></div>
 
     </section>
@@ -73,23 +73,30 @@
       <p id="votes-state" class="votes-status" role="status"></p>
       <div id="votes-controls" class="votes-controls" hidden>
         <label>Año de votación<select id="votes-year"></select></label>
-        <label>Tipo de proyecto<select id="votes-category"><option value="all">Todos los tipos</option><option value="ley">Proyectos de ley</option><option value="informes">Pedidos de informes*</option><option value="declaracion">Declaraciones</option><option value="resolucion">Otras resoluciones</option><option value="otros">Otros asuntos</option><option value="sin-datos">Sin categoría identificada</option></select></label>
+        <fieldset id="votes-types" class="project-status-checks"><legend>Tipo de proyecto</legend></fieldset>
         <label class="check"><input type="checkbox" id="votes-active"> Solo legisladores actuales</label>
         <label class="check"><input type="checkbox" id="votes-grouped" checked> Unificar cambios de nombre</label>
-        <label class="check"><input type="checkbox" id="votes-contested"> Solo votaciones con posiciones distintas</label>
+        <button type="button" id="votes-reset" class="quiet">Restablecer filtros ↺</button>
       </div>
       <div id="votes-content" hidden>
+        <p id="votes-filter-summary" class="votes-status" role="status"></p>
+        <div class="votes-definitions"><p><strong>Coincidencia general</strong> incluye todas las votaciones seleccionadas, también las que tienen consenso.</p><p><strong>Con disidencias</strong> incluye solo aquellas con al menos dos posiciones entre afirmativo, negativo y abstención. Las ausencias por sí solas no definen una disidencia.</p></div>
+        <p class="note">Ambas medidas comparan votos con el PRO. Cada asunto pesa lo mismo: los consensos en efemérides o nombres de escuelas también cuentan. La coincidencia general puede ser alta sin expresar apoyo político al gobierno.</p>
         <h3>Cómo varía la coincidencia con el PRO</h3>
         <p id="votes-history-note" class="votes-status"></p>
         <details class="votes-method"><summary>Elegir bloques del gráfico</summary><div id="votes-series"></div></details>
+        <h4 class="votes-chart-heading">Coincidencia general</h4><p id="votes-trend-general-note" class="votes-status"></p>
         <div id="votes-trend" class="votes-trend" tabindex="0" role="region" aria-label="Gráfico anual, desplazable horizontalmente en pantallas pequeñas"></div>
-        <details class="votes-method"><summary>Ver tabla de datos del gráfico</summary><div id="votes-years"></div></details>
+        <h4 class="votes-chart-heading">Coincidencia con disidencias</h4><p id="votes-trend-contested-note" class="votes-status"></p>
+        <div id="votes-trend-contested" class="votes-trend" tabindex="0" role="region" aria-label="Gráfico anual con disidencias, desplazable horizontalmente en pantallas pequeñas"></div>
+        <details class="votes-method"><summary>Ver tabla de datos de ambos gráficos</summary><div id="votes-years"></div></details>
         <div class="section-heading"><h3>Coincidencia en el período seleccionado</h3></div>
         <p id="votes-subtitle" class="note"></p>
         <p id="votes-denominator" class="votes-status" role="status"></p>
         <div id="votes-ranking" class="votes-ranking"></div>
         <details class="votes-method"><summary>Ver continuidades entre bloques</summary><div id="votes-continuities"></div></details>
         <details class="votes-method"><summary>Cómo se calcula y qué límites tiene</summary>
+          <p>Las dos medidas usan la misma fórmula y los mismos filtros de año, tipos y personas. La coincidencia general incluye los consensos. La medida con disidencias restringe el conjunto a votaciones con al menos dos posiciones entre afirmativo, negativo y abstención en todo el recinto. “NO VOTÓ” permanece en el cálculo, pero por sí solo no define una disidencia. Cada medida informa su propio número de votaciones y registros; si no hay registros comparables, no se muestra un 0%.</p>
           <p>La referencia es siempre el PRO, siguiendo sus denominaciones históricas (IDs oficiales 7, 83, 86 y 119). En cada votación se toma su posición más frecuente: afirmativo, negativo, abstención o “NO VOTÓ”. Si hay empate entre posiciones ganadoras o falta la referencia, se excluye la votación.</p>
           <p>Para cada legislador se divide la cantidad de coincidencias con el PRO por sus registros en votaciones comparables durante su pertenencia al bloque. La tasa del bloque es el promedio aritmético de esas tasas individuales: cada legislador pesa lo mismo aunque tenga distinta cantidad de registros. Los puntos anuales se redondean a cuatro decimales, como en el código publicado del gráfico de Andy Tow. El ranking usa el mismo criterio en el período seleccionado.</p>
           <p>Siguiendo los criterios de Tow, la no participación es una posición y entra en el denominador. En CABA se conserva su nombre oficial “NO VOTÓ”, que puede incluir personas presentes: no se convierte ese dato en ausencia física. Si esa es la posición ganadora del PRO, otro “NO VOTÓ” es una coincidencia. Los registros sin bloque histórico identificable no se imputan al bloque actual. Una iniciativa puede tener varias votaciones; cada ID se cuenta una vez.</p>
@@ -100,6 +107,8 @@
           <a class="download-link" href="data/votaciones.json" download>Descargar votos ↓</a>
         </details>
         <div class="section-heading"><h3>Explorar votaciones</h3></div>
+        <label>Votaciones del listado<select id="votes-list-scope"><option value="all">Todas las seleccionadas</option><option value="contested">Solo con disidencias</option></select></label>
+        <p class="note">Esta selección y la búsqueda afectan solo al listado. Los gráficos y porcentajes siguen mostrando ambas medidas.</p>
         <label class="search">Buscar por asunto o fecha<input id="votes-search" type="search" placeholder="Tema, expediente o fecha" autocomplete="off"></label>
         <div id="votes-list"></div>
       </div>

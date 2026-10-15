@@ -1,5 +1,6 @@
 import {categories,normalize,signers,filterProjects,personStats,makeGraph,partners,filterProfileProjects} from './model.mjs?v=20261014-filtros';
-import {renderVotes} from './votes.mjs?v=20261015-tow-propio';
+import {bindCheckboxFilter,mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-comparacion';
+import {renderVotes} from './votes.mjs?v=20261015-comparacion';
 
 const $ = selector => document.querySelector(selector);
 const fmt = n => new Intl.NumberFormat('es-AR').format(n);
@@ -225,8 +226,7 @@ function renderAllProjects(){
   renderProjects('#all-projects',rows,'all');
 }
 
-function networkProjects(){const types=new Set([...$('#network-types').querySelectorAll('input:checked')].map(input=>input.value));return dataset.proyectos.filter(p=>types.has(p.categoria));}
-function bindCheckboxFilter(selector,onChange){$(selector).addEventListener('change',event=>{if(!$(selector).querySelector('input:checked'))event.target.checked=true;onChange();});}
+function networkProjects(){const types=new Set(checkedValues('#network-types'));return dataset.proyectos.filter(p=>types.has(p.categoria));}
 function renderNetwork(){
   const selected=networkProjects(),visiblePeople=dataset.legisladores.filter(p=>p.activo);
   const minimum=Number($('#edge-min').value),mode=$('#edge-mode').value;
@@ -321,7 +321,7 @@ async function init(){
     $('#reset-filters').addEventListener('click',()=>{$('#year').value='all';$('#category').value='all';$('#active-only').checked=true;$('#project-status').querySelectorAll('input').forEach(input=>input.checked=true);applyFilters();});
     $('#person-search').addEventListener('input',debounce(renderPeople));$('#person-sort').querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{$('#person-sort').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));renderPeople();}));$('#active-only').addEventListener('change',applyFilters);$('#person-group').addEventListener('change',renderPeople);
     $('#project-search').addEventListener('input',debounce(()=>{pagination.all=0;renderAllProjects();}));bindCheckboxFilter('#project-status',()=>{pagination.all=0;renderAllProjects();});
-    bindCheckboxFilter('#network-types',renderNetwork);
+    mountTypeFilter('#network-types',renderNetwork);
     ['#profile-role','#profile-session','#profile-sanction','#profile-status'].forEach(id=>$(id).addEventListener('change',()=>{pagination.profile=0;renderProfile();}));
     $('#profile-reset').addEventListener('click',()=>{['#profile-role','#profile-session','#profile-sanction','#profile-status'].forEach(id=>$(id).value='all');pagination.profile=0;renderProfile();});
     $('#edge-min').addEventListener('change',renderNetwork);$('#edge-mode').addEventListener('change',renderNetwork);

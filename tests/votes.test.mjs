@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {majority,officialism,filterBallots,annualSeries} from '../site/assets/votes-model.mjs';
+import {majority,officialism,compareOfficialism,filterBallots,annualSeries} from '../site/assets/votes-model.mjs';
 const vote=(bloque,voto,legislador)=>({bloque,voto,legislador});
 test('winning position includes NO VOTO, abstention and rejects ties',()=>{
   assert.equal(majority([vote('r','AFIRMATIVO'),vote('r','NO VOTÓ')]),null);
@@ -38,6 +38,28 @@ test('categories count a multi-project ballot once and distinguish missing categ
   assert.deepEqual(filterBallots(d,{category:'ley'}).map(b=>b.id),['1']);
   assert.deepEqual(filterBallots(d,{category:'informes'}).map(b=>b.id),['2']);
   assert.deepEqual(filterBallots(d,{category:'sin-datos'}).map(b=>b.id),['3']);
+  assert.deepEqual(filterBallots(d,{types:['ley','resolucion']}).map(b=>b.id),['1']);
+  assert.deepEqual(filterBallots(d,{types:['ley','informes']}).map(b=>b.id),['1','2']);
+  assert.deepEqual(filterBallots(d,{types:['informes','sin-datos']}).map(b=>b.id),['2','3']);
+  assert.equal(filterBallots(d,{types:[]}).length,0);
+});
+
+test('comparison preserves consensual ballots in general and applies type and year filters to both measures',()=>{
+  const d={referencia_predeterminada:['r'],bloques:{r:'PRO',a:'Otro'},votaciones:[
+    {id:'1',fecha:'2025-03-01',categorias:['ley','resolucion'],positivos:2,negativos:0,abstenciones:0,votos:[vote('r','AFIRMATIVO','r1'),vote('a','AFIRMATIVO','a1')]},
+    {id:'2',fecha:'2025-03-02',categorias:['ley'],positivos:1,negativos:1,abstenciones:0,votos:[vote('r','AFIRMATIVO','r1'),vote('a','NEGATIVO','a1')]},
+    {id:'3',fecha:'2026-03-01',categorias:['informes'],positivos:1,negativos:1,abstenciones:0,votos:[vote('r','NEGATIVO','r1'),vote('a','AFIRMATIVO','a1')]}
+  ]};
+  const result=compareOfficialism(d,{year:'2025',types:['ley','resolucion'],contested:true});
+  const row=result.rows.find(r=>r.id==='a');
+  assert.equal(result.general.eligible,2);assert.equal(result.contested.eligible,1);
+  assert.equal(row.rate,.5);assert.equal(row.total,2);
+  assert.equal(row.contested.rate,0);assert.equal(row.contested.total,1);
+  const onlyConsensus=compareOfficialism(d,{year:'2025',types:['resolucion']});
+  assert.equal(onlyConsensus.rows.find(r=>r.id==='a').rate,1);
+  assert.equal(onlyConsensus.rows.find(r=>r.id==='a').contested,null);
+  assert.equal(onlyConsensus.contested.eligible,0);
+  assert.equal(annualSeries(d,{types:['ley','resolucion']}).series[0].points.length,1);
 });
 test('renamed blocs are pooled; current-only never changes the governing reference position',()=>{
   const d={referencia_predeterminada:['119','86'],bloques:{'119':'PRO','86':'PRO antes','118':'Antes','124':'Ahora'},

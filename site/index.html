@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
   <link rel="stylesheet" href="assets/compact.css?v=20261014-network-checkboxes">
-  <link rel="stylesheet" href="assets/votes.css?v=20261016-espacios">
+  <link rel="stylesheet" href="assets/votes.css?v=20261016-explicacion">
   <link rel="stylesheet" href="assets/atlas.css?v=20261016-navigation">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261016-navigation"></script>
+  <script type="module" src="assets/app.mjs?v=20261016-explicacion"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -85,7 +85,7 @@
       </div>
       <div id="votes-content" hidden>
         <div class="section-tools votes-chart-tools">
-          <fieldset id="votes-measure" class="vote-segmented"><legend class="sr-only">Medida del gráfico</legend><label><input type="radio" name="votes-measure" value="general" checked><span>Coincidencia general</span></label><label><input type="radio" name="votes-measure" value="contested"><span>Con disidencias</span></label></fieldset>
+          <div class="votes-measure-control"><fieldset id="votes-measure" class="vote-segmented" aria-describedby="votes-measure-note"><legend class="sr-only">Medida del gráfico</legend><label><input type="radio" name="votes-measure" value="general" checked><span>Coincidencia general</span></label><label><input type="radio" name="votes-measure" value="contested"><span>Con disidencias</span></label></fieldset><p id="votes-measure-note" role="status">Todas las votaciones seleccionadas, incluidos los consensos.</p></div>
           <div class="votes-person-control"><label for="votes-person">Agregar legislador</label><div class="votes-person-input"><input type="search" id="votes-person" placeholder="Buscar por nombre o apellido" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="votes-person-options"><button type="button" id="votes-person-clear" aria-label="Quitar legislador del gráfico" hidden>×</button></div><ul id="votes-person-options" role="listbox" aria-label="Legisladores encontrados" hidden></ul></div>
         </div>
         <div id="votes-trend" class="votes-trend" tabindex="0" role="region" aria-label="Oficialómetro anual, desplazable horizontalmente en pantallas pequeñas"></div>

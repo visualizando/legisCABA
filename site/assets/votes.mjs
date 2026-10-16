@@ -1,7 +1,7 @@
-import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,visibleBlockSeries,expandVoteTypes,groupPoliticalFamilies} from './votes-model.mjs?v=20261016-espacios';
-import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-espacios';
-import {personAutocomplete} from './person-autocomplete.mjs?v=20261016-espacios';
-import {chartPng} from './chart-image.mjs?v=20261016-espacios';
+import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,visibleBlockSeries,expandVoteTypes,groupPoliticalFamilies} from './votes-model.mjs?v=20261016-explicacion';
+import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-explicacion';
+import {personAutocomplete} from './person-autocomplete.mjs?v=20261016-explicacion';
+import {chartPng} from './chart-image.mjs?v=20261016-explicacion';
 import {categories,normalize} from './model.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -59,6 +59,7 @@ function color(id){
   return '#65796c';
 }
 function render(){
+  $('#votes-measure-note').textContent=measure()==='contested'?'Solo votaciones con disidencias entre afirmativos, negativos o abstenciones.':'Todas las votaciones seleccionadas, incluidos los consensos.';
   const f=filters(),view=f.grouped?groupPoliticalFamilies(data):data;
   const comparison=compareOfficialism(view,f),result=measure()==='contested'?comparison.contested:comparison.general;
   const annual=annualSeries(view,{...f,contested:measure()==='contested'});

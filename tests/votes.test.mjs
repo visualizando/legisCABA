@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {majority,officialism,compareOfficialism,filterBallots,annualSeries,personAnnualSeries,expandVoteTypes,visibleBlockSeries} from '../site/assets/votes-model.mjs';
+import {majority,officialism,compareOfficialism,filterBallots,annualSeries,personAnnualSeries,expandVoteTypes,visibleBlockSeries,groupPoliticalFamilies} from '../site/assets/votes-model.mjs';
 const vote=(bloque,voto,legislador)=>({bloque,voto,legislador});
 
 test('chart includes historical Peronist and FIT blocs without fabricating merged trajectories',()=>{
@@ -10,6 +10,28 @@ test('chart includes historical Peronist and FIT blocs without fabricating merge
   assert.deepEqual(visibleBlockSeries(d,series).map(s=>s.id),ids);
   assert.equal(visibleBlockSeries(d,series).find(s=>s.id==='25'),series.find(s=>s.id==='25'));
   assert.equal(visibleBlockSeries(d,[...series,{id:'unrelated'}]).length,series.length);
+});
+
+test('political families recalculate individual rates across bloc changes and keep raw data and PRO reference',()=>{
+  const d={referencia_predeterminada:['119'],bloques:{'119':'PRO','41':'FPV','25':'Bloque Peronista','124':'Fuerza','51':'FIT','107':'PO','12':'AyL'},
+    legisladores:{p:'Persona',q:'Otra',l:'Izquierda'},bloque_trayectoria:{'41':'87'},trayectorias:{},votaciones:[
+    {id:'a',fecha:'2024-01-01',positivos:3,negativos:1,abstenciones:0,categorias:['ley','resolucion'],votos:[vote('119','AFIRMATIVO','r'),vote('41','AFIRMATIVO','p'),vote('25','NEGATIVO','q'),vote('51','AFIRMATIVO','l')]},
+    {id:'b',fecha:'2024-02-01',positivos:1,negativos:2,abstenciones:0,categorias:['ley'],votos:[vote('119','AFIRMATIVO','r'),vote('25','NEGATIVO','p'),vote('107','NEGATIVO','l')]},
+    {id:'c',fecha:'2024-03-01',positivos:2,negativos:0,abstenciones:0,categorias:['ley'],votos:[vote('119','AFIRMATIVO','r'),vote('124','AFIRMATIVO','p')]}
+  ]};
+  const before=JSON.stringify(d),grouped=groupPoliticalFamilies(d);
+  const result=officialism(grouped,{types:['ley','resolucion']});
+  const row=result.rows.find(r=>r.id==='peronistas');
+  assert.equal(row.name,'Bloques peronistas');assert.equal(row.people,2);assert.equal(row.total,4);
+  assert.equal(row.rate,1/3);assert.notEqual(row.rate,row.matches/row.total);
+  assert.equal(result.rows.find(r=>r.id==='izquierdas').rate,.5);
+  assert.equal(result.rows.find(r=>r.id==='119').rate,1);
+  assert.equal(officialism(grouped,{activeIds:new Set(['p'])}).rows[0].rate,2/3);
+  assert.deepEqual(officialism(grouped,{grouped:false}).rows.map(r=>r.id).sort(),['107','119','124','25','41','51']);
+  assert.equal(JSON.stringify(d),before);
+  assert.deepEqual(d.votaciones[0].votos.map(v=>v.bloque),['119','41','25','51']);
+  const series=visibleBlockSeries(grouped,annualSeries(grouped).series);
+  assert.deepEqual(series.map(s=>s.name).sort(),['Bloques de izquierda','Bloques peronistas','PRO']);
 });
 test('winning position includes NO VOTO, abstention and rejects ties',()=>{
   assert.equal(majority([vote('r','AFIRMATIVO'),vote('r','NO VOTÓ')]),null);

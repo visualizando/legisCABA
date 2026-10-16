@@ -1,7 +1,7 @@
-import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,visibleBlockSeries,expandVoteTypes} from './votes-model.mjs?v=20261016-historicos';
-import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-historicos';
-import {personAutocomplete} from './person-autocomplete.mjs?v=20261016-historicos';
-import {chartPng} from './chart-image.mjs?v=20261016-historicos';
+import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,visibleBlockSeries,expandVoteTypes,groupPoliticalFamilies} from './votes-model.mjs?v=20261016-espacios';
+import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-espacios';
+import {personAutocomplete} from './person-autocomplete.mjs?v=20261016-espacios';
+import {chartPng} from './chart-image.mjs?v=20261016-espacios';
 import {categories,normalize} from './model.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -48,18 +48,21 @@ function filters(){return {year:$('#votes-year').value,types:expandVoteTypes(che
   reference:['119','86','83','7'],grouped:$('#votes-grouped').checked,
   activeIds:$('#votes-active').checked?currentIds:null};}
 function color(id){
+  if(id==='peronistas')return '#2488b4';
+  if(id==='izquierdas')return '#c73323';
   const members=data.trayectorias?.[id]?.bloques||[id];
   if(members.some(x=>['83','86','119','120','123'].includes(x)))return '#c38c0e';
   if(members.some(x=>['108','118','124','41','87','25','44','84'].includes(x)))return '#2488b4';
   if(members.some(x=>['53','89','104','125'].includes(x)))return '#d56947';
   if(members.some(x=>['114','115','117','121','122','127'].includes(x)))return '#a65aa0';
-  if(members.some(x=>['107','113','112','116','51','82','103'].includes(x)))return '#c73323';
+  if(members.some(x=>['12','107','113','112','116','51','82','103'].includes(x)))return '#c73323';
   return '#65796c';
 }
 function render(){
-  const f=filters(),comparison=compareOfficialism(data,f),result=measure()==='contested'?comparison.contested:comparison.general;
-  const annual=annualSeries(data,{...f,contested:measure()==='contested'});
-  chartSeries=visibleBlockSeries(data,annual.series);
+  const f=filters(),view=f.grouped?groupPoliticalFamilies(data):data;
+  const comparison=compareOfficialism(view,f),result=measure()==='contested'?comparison.contested:comparison.general;
+  const annual=annualSeries(view,{...f,contested:measure()==='contested'});
+  chartSeries=visibleBlockSeries(view,annual.series);
   if(personId)chartSeries.push(personAnnualSeries(data,personId,{...f,contested:measure()==='contested'}));
   $('#votes-denominator').textContent=`${measureName()}: ${fmt(result.eligible)} votaciones comparables de ${fmt(result.ballots)} seleccionadas. ${fmt(result.withoutReference)} excluidas por empate o falta de referencia y ${fmt(result.inconsistent)} por inconsistencias. “No votó” entra en el denominador individual.`;
   const first=data.cobertura_anual?.find(y=>y.primera)?.primera||data.desde;
@@ -78,7 +81,7 @@ function drawTrend(series){
   renderAccessibleTable(selected);
   if(!selected.length){root.append('p').attr('class','empty').text('Sin votos comparables con los filtros seleccionados. Probá otro año o tipo, o desactivá “Solo legisladores actuales”.');return;}
   const years=selected.flatMap(s=>s.points.map(p=>p.year)),min=$('#votes-year').value==='all'?2015:Math.min(...years),max=Math.max(...years);
-  const w=Math.max(680,$('#votes-trend').clientWidth),h=640,m={top:64,right:230,bottom:52,left:52};
+  const w=Math.max(680,$('#votes-trend').clientWidth),h=Math.max(640,selected.length*22+150),m={top:64,right:230,bottom:52,left:52};
   const x=d3.scaleLinear().domain(min===max?[min-.5,max+.5]:[min,max]).range([m.left,w-m.right]);
   const y=d3.scaleLinear().domain([0,1]).range([h-m.bottom,m.top]);
   const svg=root.append('svg').attr('viewBox',`0 0 ${w} ${h}`).attr('role','img').attr('aria-label',`${measureName()}: evolución anual de coincidencia con el PRO, de cero a cien por ciento. Datos disponibles en la tabla accesible.`);
@@ -118,7 +121,8 @@ function drawTrend(series){
   }
   endpoints.sort((a,b)=>a.label-b.label);
   for(let i=1;i<endpoints.length;i++)endpoints[i].label=Math.max(endpoints[i].label,endpoints[i-1].label+22);
-  if(endpoints.at(-1).label>h-m.bottom-12){const excess=endpoints.at(-1).label-(h-m.bottom-12);endpoints.forEach(p=>p.label-=excess);}
+  for(let i=endpoints.length-1;i>=0;i--)endpoints[i].label=Math.min(endpoints[i].label,i===endpoints.length-1?h-m.bottom-12:endpoints[i+1].label-22);
+  for(let i=0;i<endpoints.length;i++)endpoints[i].label=Math.max(endpoints[i].label,i===0?m.top:endpoints[i-1].label+22);
   for(const p of endpoints){
     const g=svg.append('g').attr('class','vote-endpoint').attr('data-series',p.s.id);labels.set(p.s.id,g);
     g.append('path').attr('d',`M${x(p.last.year)+6},${p.natural}L${w-m.right+10},${p.label}H${w-m.right+18}`).attr('stroke',p.c).attr('fill','none').attr('stroke-opacity',p.last.year<max?.25:.7).attr('stroke-dasharray',p.last.year<max?'2 4':null);
@@ -148,7 +152,7 @@ function renderAccessibleTable(series){
 }
 function pngForChart(){
   if(!imagePromise){
-    const context=[$('#votes-year').selectedOptions[0].textContent,checkedValues('#votes-types').map(id=>voteTypes.find(t=>t.id===id).label).join(', '),$('#votes-active').checked?'Solo legisladores actuales':'Todos los legisladores',personId?data.legisladores[personId]:null].filter(Boolean).join(' · ');
+    const context=[$('#votes-year').selectedOptions[0].textContent,checkedValues('#votes-types').map(id=>voteTypes.find(t=>t.id===id).label).join(', '),$('#votes-active').checked?'Solo legisladores actuales':'Todos los legisladores',$('#votes-grouped').checked?'Agrupado por espacio político':'Bloques originales',personId?data.legisladores[personId]:null].filter(Boolean).join(' · ');
     imagePromise=chartPng($('#votes-trend svg'),{title:`El oficialómetro · ${measureName()}`,subtitle:context,footer:'LegisCABA · Fuente: Legislatura CABA · Idea original: Andy Tow · visualizando.github.io/legisCABA'}).catch(error=>{imagePromise=null;throw error;});
   }return imagePromise;
 }
@@ -170,7 +174,7 @@ function rankMeasure(row,label){
   return `<div class="vote-measure"><div class="vote-rank-label"><span>${label}</span><strong>${row?percent(row.rate):'Sin votos comparables'}</strong></div><div class="vote-track" aria-hidden="true">${row?`<i style="width:${row.rate*100}%;background:${color(row.id)}"></i>`:''}</div><p>${row?`${fmt(row.people)} ${row.people===1?'legislador':'legisladores'} · ${fmt(row.ballots)} votaciones · ${fmt(row.total)} registros · ${fmt(row.nonvotes)} “no votó”`:'Sin registros para calcular esta medida con los filtros seleccionados.'}</p></div>`;
 }
 function renderContinuities(){
-  $('#votes-continuities').innerHTML=`<p>Se unifican movimientos simultáneos de al menos dos legisladores cuando representan al menos el 80% de quienes continuaban en el bloque de origen y de quienes continuaban en el de destino. Se cuentan solo personas con bloque identificado antes y después. Las escisiones y las fusiones sin esa continuidad permanecen separadas. Se conservan los nombres originales en cada voto.</p><div class="table-scroll"><table><thead><tr><th>Origen</th><th>Continuidad</th><th>Fecha</th><th>Movimiento</th><th>Tratamiento</th></tr></thead><tbody>${(data.continuidades||[]).map(c=>`<tr><td>${esc(c.nombre_origen||data.bloques[c.desde]||c.desde)}</td><td>${esc(c.nombre_destino||data.bloques[c.hacia]||c.hacia)}</td><td>${c.fecha}</td><td>${c.legisladores.length}/${c.continuaban_origen} en origen · ${c.legisladores.length}/${c.continuaban_destino} en destino</td><td>${c.unificados?'Unificados':'Separados'}</td></tr>`).join('')}</tbody></table></div>`;
+  $('#votes-continuities').innerHTML=`<p>La vista agrupada reúne los bloques peronistas y de izquierda por espacio político. Las continuidades de nombres que se detallan aquí se detectan por movimientos simultáneos de al menos dos legisladores cuando representan al menos el 80% de quienes continuaban en el bloque de origen y de quienes continuaban en el de destino. Se cuentan solo personas con bloque identificado antes y después. Las escisiones y las fusiones sin esa continuidad permanecen separadas. Se conservan los nombres originales en cada voto.</p><div class="table-scroll"><table><thead><tr><th>Origen</th><th>Continuidad</th><th>Fecha</th><th>Movimiento</th><th>Tratamiento</th></tr></thead><tbody>${(data.continuidades||[]).map(c=>`<tr><td>${esc(c.nombre_origen||data.bloques[c.desde]||c.desde)}</td><td>${esc(c.nombre_destino||data.bloques[c.hacia]||c.hacia)}</td><td>${c.fecha}</td><td>${c.legisladores.length}/${c.continuaban_origen} en origen · ${c.legisladores.length}/${c.continuaban_destino} en destino</td><td>${c.unificados?'Unificados':'Separados'}</td></tr>`).join('')}</tbody></table></div>`;
 }
 function renderList(){
   const f=filters(),term=normalize($('#votes-search').value);

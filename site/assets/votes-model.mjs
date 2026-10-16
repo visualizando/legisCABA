@@ -10,11 +10,23 @@ export function majority(votes){
 }
 export const blockKey=(data,id,grouped=true)=>grouped?(data.bloque_trayectoria?.[id]||id):id;
 export const blockName=(data,id,grouped=true)=>grouped?(data.trayectorias?.[id]?.nombre||data.bloques[id]):data.bloques[id];
+export const politicalFamilies=[
+  {id:'peronistas',nombre:'Bloques peronistas',bloques:['41','87','25','44','84','78','108','118','124']},
+  {id:'izquierdas',nombre:'Bloques de izquierda',bloques:['12','51','82','103','107','112','113','116']}
+];
+export function groupPoliticalFamilies(data){
+  const mapping={...data.bloque_trayectoria},trajectories={...data.trayectorias};
+  for(const family of politicalFamilies){
+    trajectories[family.id]={nombre:family.nombre,bloques:[...family.bloques],alias:family.bloques.map(id=>data.bloques[id]).filter(Boolean)};
+    for(const id of family.bloques)mapping[id]=family.id;
+  }
+  return {...data,bloque_trayectoria:mapping,trayectorias:trajectories};
+}
 export function visibleBlockSeries(data,series){
   // Include historical and parallel blocs, not only today's six main names.
   const ids=['119','104','114','9',
-    '41','87','25','44','84','108','118','124',
-    '51','82','103','107','112','113','116'];
+    '41','87','25','44','84','78','108','118','124',
+    '12','51','82','103','107','112','113','116'];
   const visible=new Set(ids.map(id=>blockKey(data,id,true)));
   return series.filter(s=>visible.has(blockKey(data,s.id,true)));
 }

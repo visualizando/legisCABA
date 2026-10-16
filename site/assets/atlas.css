@@ -1,7 +1,5 @@
 #project-atlas .intro{display:flex;justify-content:space-between;gap:26px;align-items:end;padding-block:25px 20px}
 #project-atlas .intro p{font-size:14px;max-width:620px;margin-top:10px;color:var(--muted)}
-#project-atlas .passport{flex-shrink:0;border:1px solid #9cae9c;border-radius:50%;width:105px;height:105px;display:flex;align-items:center;justify-content:center;text-align:center;transform:rotate(8deg);color:#526d57;font-size:9px;letter-spacing:1px;line-height:1.7}
-#project-atlas .passport strong{font-family:Georgia,serif;font-size:25px;letter-spacing:0}
 #project-atlas .toolbar{display:flex;gap:14px;align-items:end;flex-wrap:wrap;padding-bottom:16px}
 #project-atlas .toolbar select{max-width:230px;font-size:13px}
 #project-atlas .toolbar .person{flex:1}
@@ -22,7 +20,6 @@
 #project-atlas .carto-label .name{font-family:Georgia,serif;font-size:14px}
 #project-atlas .carto-label .sub{font-size:8.5px;letter-spacing:.4px;fill:#526b5d}
 #project-atlas .carto-label.active rect{stroke:#a44832;stroke-width:1.6;fill:#fff7df}
-#project-atlas .carto-label.visited .name{font-style:italic}
 #project-atlas .coast{stroke:#7d977e;stroke-width:.8}
 #project-atlas .point{fill:#3b5951;opacity:.44}
 #project-atlas .point.dim{opacity:.09}
@@ -63,13 +60,10 @@
 #project-atlas .carto-label:hover rect{fill:#fffdf4;stroke:#526d57}}
 @media(max-width:1000px){#project-atlas .layout{grid-template-columns:minmax(0,1fr) 280px}
 #project-atlas .carto-label .name{font-size:14px}
-#project-atlas .toolbar{gap:10px}
-#project-atlas .passport{width:85px;height:85px}}
+#project-atlas .toolbar{gap:10px}}
 @media(max-width:760px){#project-atlas .layout{grid-template-columns:1fr}
 #project-atlas .intro{align-items:start}
 #project-atlas .intro p{font-size:13px}
-#project-atlas .passport{width:72px;height:72px;font-size:7px}
-#project-atlas .passport strong{font-size:19px}
 #project-atlas .toolbar .person{flex-basis:100%}
 #project-atlas .toolbar label{max-width:100%}
 #project-atlas .toolbar select{font-size:16px;max-width:100%}
@@ -165,3 +159,9 @@
 #project-atlas .sidebar .search-section label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 #project-atlas .activity-list button{min-height:20px;padding:1px 0}
 #project-atlas .activity-list .activity-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+#project-atlas .person-control>label{margin-bottom:5px}
+#project-atlas .person-picker{display:flex;align-items:stretch;gap:5px;max-width:340px}
+#project-atlas .person-picker select{flex:1;min-width:0;max-width:none;width:100%}
+#project-atlas .person-picker button{min-height:34px;min-width:34px;padding:0 9px;font-size:18px;font-weight:400;border-color:var(--line);border-radius:6px;background:transparent}
+@media(max-width:760px){#project-atlas .person-picker button{min-height:40px;min-width:40px}}

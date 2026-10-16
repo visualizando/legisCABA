@@ -1,7 +1,7 @@
 import {categories,normalize,signers,filterProjects,personStats,makeGraph,partners,filterProfileProjects} from './model.mjs?v=20261014-filtros';
 import {bindCheckboxFilter,mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-espacios';
 import {renderVotes} from './votes.mjs?v=20261016-espacios';
-import {renderAtlas} from './atlas.mjs?v=20261016-compact';
+import {renderAtlas} from './atlas.mjs?v=20261016-navigation';
 
 const $ = selector => document.querySelector(selector);
 const fmt = n => new Intl.NumberFormat('es-AR').format(n);

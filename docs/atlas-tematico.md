@@ -30,7 +30,7 @@ El sector de modificaciones normativas heterogéneas queda como **Referencias po
 ## Exploración
 
 - Elegir una zona acerca la cámara, ilumina sus proyectos y muestra representantes. El selector permite lo mismo que los rótulos del mapa mediante teclado.
-- El cuaderno de viaje cuenta zonas abiertas en la sesión. No mide aprendizaje, mérito o actividad legislativa. Se reinicia al recargar.
+- No se guardan zonas visitadas, marcas de visto ni cambios de estilo por visitas anteriores. «Volver al mapa» quita el tema seleccionado y restaura la vista general. Volver a pulsar la misma zona también la deselecciona.
 - Seleccionar un legislador ilumina sus autorías; una casilla permite incluir coautorías. Las firmas permanecen fuera del cálculo semántico.
 - Seleccionar un proyecto muestra expediente oficial y cinco vecinos originales. La opción sin firmas compartidas utiliza el filtro validado en el primer piloto. Una lista de vecinos siempre requiere inspección: no todas las relaciones son pertinentes.
 - Al seleccionar una zona, el panel muestra hasta cinco legisladores con más autorías en todos sus expedientes. Al seleccionar un punto, el universo es ese proyecto y sus 20 vecinos más próximos en el espacio semántico original. Estos 21 expedientes son un entorno exploratorio, no una categoría temática validada.

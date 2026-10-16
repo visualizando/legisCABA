@@ -136,6 +136,12 @@ overrides='''
 #project-atlas .activity-list button{min-height:20px;padding:1px 0}
 #project-atlas .activity-list .activity-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
+#project-atlas .person-control>label{margin-bottom:5px}
+#project-atlas .person-picker{display:flex;align-items:stretch;gap:5px;max-width:340px}
+#project-atlas .person-picker select{flex:1;min-width:0;max-width:none;width:100%}
+#project-atlas .person-picker button{min-height:34px;min-width:34px;padding:0 9px;font-size:18px;font-weight:400;border-color:var(--line);border-radius:6px;background:transparent}
+@media(max-width:760px){#project-atlas .person-picker button{min-height:40px;min-width:40px}}
+
 '''
 (ROOT/'site/assets/atlas.css').write_text((scoped(css)+'\n'+overrides).rstrip()+'\n',encoding='utf-8')
 print('Atlas exportado: módulo y CSS acotados, snapshot estático independiente.')

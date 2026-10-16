@@ -1,6 +1,7 @@
 import {categories,normalize,signers,filterProjects,personStats,makeGraph,partners,filterProfileProjects} from './model.mjs?v=20261014-filtros';
 import {bindCheckboxFilter,mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-labels';
 import {renderVotes} from './votes.mjs?v=20261015-labels';
+import {renderAtlas} from './atlas.mjs?v=20261016';
 
 const $ = selector => document.querySelector(selector);
 const fmt = n => new Intl.NumberFormat('es-AR').format(n);
@@ -275,16 +276,21 @@ function renderNetworkDetail(){
   $('#clear-node').addEventListener('click',()=>{selectedNode=null;highlightNetwork();renderNetworkDetail();});
 }
 function render(){
+  const atlasVisible=route==='proyectos'&&location.hash!=='#proyectos/listado';
+  $('#project-view-controls').hidden=route!=='proyectos';
+  $('#project-atlas').hidden=!atlasVisible;
+  $('#project-list-panel').hidden=atlasVisible;
+  $('#project-view-controls').querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String((button.dataset.projectView==='atlas')===atlasVisible)));
   $('#profile-back').hidden=route!=='ficha';
   $('#profile-project-block').hidden=route!=='ficha';
   $('#page-intro').classList.add('sr-only');
   const copy=viewCopy[route];$('#eyebrow').textContent=copy[0];$('#page-title').innerHTML=copy[1];$('#page-description').textContent=copy[2];$('#page-description').hidden=!copy[2];$('#eyebrow').hidden=!copy[0];
   if(route==='ficha'&&peopleById.has(personId))$('#page-title').textContent=displayName(peopleById.get(personId).nombre);
-  $('.filters').hidden=['metodologia','legisladores','red','votaciones'].includes(route);
+  $('.filters').hidden=atlasVisible||['metodologia','legisladores','red','votaciones'].includes(route);
   const activeLabel=$('#active-only').closest('label');(route==='legisladores'?$('#people-filters'):$('#global-filters')).append(activeLabel);document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='view-'+route);
   document.querySelectorAll('nav a').forEach(a=>{if(a.hash==='#'+(route==='ficha'?'legisladores':route))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   document.title=route==='panorama'?'LegisCABA — Monitor parlamentario':`${route==='red'?'Red de coautorías':route==='metodologia'?'Cómo leer los datos':route[0].toUpperCase()+route.slice(1)} — LegisCABA`;
-  if(route==='panorama')renderOverview();if(route==='legisladores')renderPeople();if(route==='ficha')renderProfile();if(route==='proyectos')renderAllProjects();if(route==='red')renderNetwork();
+  if(route==='panorama')renderOverview();if(route==='legisladores')renderPeople();if(route==='ficha')renderProfile();if(route==='proyectos'){if(atlasVisible)renderAtlas($('#project-atlas'));else renderAllProjects();}if(route==='red')renderNetwork();
   if(route==='votaciones')renderVotes(dataset);
 }
 function applyFilters(){
@@ -328,6 +334,7 @@ async function init(){
     $('#network-reset').addEventListener('click',()=>{selectedNode=null;renderNetwork();});
     $('#zoom-in').addEventListener('click',()=>{if(graphZoom)d3.select('#network').call(graphZoom.scaleBy,1.4);});$('#zoom-out').addEventListener('click',()=>{if(graphZoom)d3.select('#network').call(graphZoom.scaleBy,1/1.4);});
     window.addEventListener('hashchange',navigate);
+    $('#project-view-controls').querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{location.hash=button.dataset.projectView==='atlas'?'proyectos':'proyectos/listado';}));
     window.addEventListener('resize',debounce(()=>{if(route==='panorama')renderOverview();if(route==='ficha')renderProfile();if(route==='red')renderNetwork();},200));
     applyFilters();navigate();
   }catch(error){$('#load-state').innerHTML=`<p>No se pudieron cargar los datos. Recargá la página.</p><p class="note">${esc(error.message)}</p><button type="button" id="retry-load">Volver a cargar</button>`;$('#retry-load').addEventListener('click',()=>location.reload());}

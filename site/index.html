@@ -10,8 +10,9 @@
   <link rel="stylesheet" href="assets/official-blocks.css">
   <link rel="stylesheet" href="assets/compact.css?v=20261014-network-checkboxes">
   <link rel="stylesheet" href="assets/votes.css?v=20261015-labels">
+  <link rel="stylesheet" href="assets/atlas.css?v=20261016">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261015-labels"></script>
+  <script type="module" src="assets/app.mjs?v=20261016-atlas"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -26,6 +27,7 @@
   <noscript>Se necesita JavaScript para ver los datos.</noscript>
   <div id="app" hidden>
     <section class="hero" id="page-intro"><div><p class="eyebrow" id="eyebrow"></p><h1 id="page-title">Panorama</h1><p class="intro" id="page-description"></p></div></section>
+    <div id="project-view-controls" class="sort-controls project-views" role="group" aria-label="Vista de proyectos" hidden><button type="button" data-project-view="atlas" aria-pressed="true">Mapa temático</button><button type="button" data-project-view="listado" aria-pressed="false">Listado de proyectos</button></div>
     <form class="filters" id="global-filters" aria-label="Filtrar la actividad"><label>Presentados en<select id="year"><option value="all">2023-actualidad</option></select></label><label>Tipo de proyecto<select id="category"><option value="all">Todos los tipos</option><option value="ley">Proyectos de ley</option><option value="informes">Pedidos de informes*</option><option value="declaracion">Declaraciones</option><option value="resolucion">Otras resoluciones</option></select></label><label class="check"><input id="active-only" type="checkbox" checked> Solo legisladores actuales</label><button type="button" id="reset-filters" class="quiet">Restablecer filtros ↺</button><p id="filter-count" class="sr-only" role="status"></p></form>
 
     <section id="view-panorama" class="view">
@@ -58,7 +60,10 @@
     </section>
 
     <section id="view-proyectos" class="view" hidden>
+      <div id="project-atlas" hidden></div>
+      <div id="project-list-panel">
       <div class="section-tools"><label class="search">Buscar proyecto<input id="project-search" type="search" placeholder="Número, tema o nombre del autor" autocomplete="off"></label><fieldset id="project-status" class="project-status-checks"><legend>Recorrido</legend><label><input type="checkbox" value="sanction" checked>Con sanción</label><label><input type="checkbox" value="session" checked>Con registro en sesión</label><label><input type="checkbox" value="no-sanction" checked>Sin sanción registrada</label></fieldset></div><div id="all-projects"></div>
+      </div>
     </section>
 
     <section id="view-red" class="view" hidden>

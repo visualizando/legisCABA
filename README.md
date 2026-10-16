@@ -87,6 +87,8 @@ La leyenda usa los seis espacios políticos definidos. Transformación y bloques
 
 ### Criterios gráficos
 
+La sección **Proyectos** incorpora el atlas temático experimental (`#proyectos`) y conserva el listado con sus filtros (`#proyectos/listado`). El atlas es un snapshot semántico al 14/10/2026, cargado solo al abrir esa vista; no se actualiza automáticamente con el scrapeo diario. Ver [método, límites y reproducción del atlas](docs/atlas-tematico.md). Su módulo y CSS se integran en la página y reutilizan los controles del sitio; no se necesita un runtime de modelos en producción.
+
 - Mantener cada título más cerca de sus propias barras que del siguiente grupo.
 - Ubicar los valores al final de sus barras o segmentos correspondientes.
 - Agrupar las referencias en un recuadro gris tenue y centrado.

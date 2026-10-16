@@ -1,7 +1,7 @@
-import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,blockKey,expandVoteTypes} from './votes-model.mjs?v=20261015-labels';
-import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261015-labels';
-import {personAutocomplete} from './person-autocomplete.mjs?v=20261015-labels';
-import {chartPng} from './chart-image.mjs?v=20261015-labels';
+import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,blockKey,expandVoteTypes} from './votes-model.mjs?v=20261016-curvas';
+import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-curvas';
+import {personAutocomplete} from './person-autocomplete.mjs?v=20261016-curvas';
+import {chartPng} from './chart-image.mjs?v=20261016-curvas';
 import {categories,normalize} from './model.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -105,9 +105,15 @@ function drawTrend(series){
     const c=s.kind==='person'?'#263c35':color(s.id),individual=s.kind==='person';
     const g=svg.append('g').attr('class','vote-line-group').style('pointer-events','none').attr('data-series',s.id).attr('tabindex',0).attr('role','group').attr('aria-label',s.name);groups.set(s.id,g);
     g.append('title').text(`${s.name}: ${s.points.map(p=>`${p.year} ${percent(p.rate)}`).join('; ')}`);
-    for(let i=1;i<s.points.length;i++){
-      const a=s.points[i-1],b=s.points[i];if(b.year-a.year!==1)continue;
-      g.append('line').attr('x1',x(a.year)).attr('y1',y(a.rate)).attr('x2',x(b.year)).attr('y2',y(b.rate)).attr('stroke',c).attr('stroke-width',individual?3:2.5).attr('stroke-dasharray',individual?'7 4':null);
+    const segments=[];
+    for(const point of s.points){
+      const segment=segments.at(-1);
+      if(!segment||point.year-segment.at(-1).year!==1)segments.push([point]);
+      else segment.push(point);
+    }
+    const curve=d3.line().x(p=>x(p.year)).y(p=>y(p.rate)).curve(d3.curveMonotoneX);
+    for(const segment of segments.filter(points=>points.length>1)){
+      g.append('path').datum(segment).attr('d',curve).attr('fill','none').attr('stroke',c).attr('stroke-width',individual?3:2.5).attr('stroke-dasharray',individual?'7 4':null);
     }
     g.selectAll('circle').data(s.points).join('circle').attr('cx',p=>x(p.year)).attr('cy',p=>y(p.rate)).attr('r',individual?5:4).attr('stroke',c).attr('stroke-width',1.5).attr('fill',c).append('title').text(p=>`${s.name} · ${p.year}: ${percent(p.rate)} · ${pointDetail(p)}`);
     const last=s.points.at(-1);endpoints.push({s,last,natural:y(last.rate),label:y(last.rate),c});

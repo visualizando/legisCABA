@@ -1,7 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {majority,officialism,compareOfficialism,filterBallots,annualSeries,personAnnualSeries,expandVoteTypes} from '../site/assets/votes-model.mjs';
+import {majority,officialism,compareOfficialism,filterBallots,annualSeries,personAnnualSeries,expandVoteTypes,visibleBlockSeries} from '../site/assets/votes-model.mjs';
 const vote=(bloque,voto,legislador)=>({bloque,voto,legislador});
+
+test('chart includes historical Peronist and FIT blocs without fabricating merged trajectories',()=>{
+  const d={bloque_trayectoria:{'41':'87','108':'124','118':'124','104':'125','86':'119'}};
+  const ids=['41','87','25','44','84','108','118','124','51','82','103','107','112','113','116','86','119','104','125'];
+  const series=ids.map(id=>({id,points:[{year:id==='25'?2016:2020,rate:.5}]}));
+  assert.deepEqual(visibleBlockSeries(d,series).map(s=>s.id),ids);
+  assert.equal(visibleBlockSeries(d,series).find(s=>s.id==='25'),series.find(s=>s.id==='25'));
+  assert.equal(visibleBlockSeries(d,[...series,{id:'unrelated'}]).length,series.length);
+});
 test('winning position includes NO VOTO, abstention and rejects ties',()=>{
   assert.equal(majority([vote('r','AFIRMATIVO'),vote('r','NO VOTÓ')]),null);
   assert.equal(majority([vote('r','NO VOTÓ'),vote('r','NO VOTÓ'),vote('r','AFIRMATIVO')]),'NO VOTÓ');

@@ -1,7 +1,7 @@
-import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,blockKey,expandVoteTypes} from './votes-model.mjs?v=20261016-curvas';
-import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-curvas';
-import {personAutocomplete} from './person-autocomplete.mjs?v=20261016-curvas';
-import {chartPng} from './chart-image.mjs?v=20261016-curvas';
+import {compareOfficialism,filterBallots,annualSeries,personAnnualSeries,visibleBlockSeries,expandVoteTypes} from './votes-model.mjs?v=20261016-historicos';
+import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-historicos';
+import {personAutocomplete} from './person-autocomplete.mjs?v=20261016-historicos';
+import {chartPng} from './chart-image.mjs?v=20261016-historicos';
 import {categories,normalize} from './model.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -50,18 +50,16 @@ function filters(){return {year:$('#votes-year').value,types:expandVoteTypes(che
 function color(id){
   const members=data.trayectorias?.[id]?.bloques||[id];
   if(members.some(x=>['83','86','119','120','123'].includes(x)))return '#c38c0e';
-  if(members.some(x=>['108','118','124','41','87'].includes(x)))return '#2488b4';
-  if(members.some(x=>['104','125'].includes(x)))return '#d56947';
+  if(members.some(x=>['108','118','124','41','87','25','44','84'].includes(x)))return '#2488b4';
+  if(members.some(x=>['53','89','104','125'].includes(x)))return '#d56947';
   if(members.some(x=>['114','115','117','121','122','127'].includes(x)))return '#a65aa0';
-  if(members.some(x=>['107','113','112','116','51'].includes(x)))return '#c73323';
+  if(members.some(x=>['107','113','112','116','51','82','103'].includes(x)))return '#c73323';
   return '#65796c';
 }
 function render(){
   const f=filters(),comparison=compareOfficialism(data,f),result=measure()==='contested'?comparison.contested:comparison.general;
   const annual=annualSeries(data,{...f,contested:measure()==='contested'});
-  const defaults=new Set(['119','124','104','114','107','9'].map(id=>blockKey(data,id,true)));
-  // Include historical aliases of the main blocs when name unification is off.
-  chartSeries=annual.series.filter(s=>defaults.has(s.id)||defaults.has(blockKey(data,s.id,true)));
+  chartSeries=visibleBlockSeries(data,annual.series);
   if(personId)chartSeries.push(personAnnualSeries(data,personId,{...f,contested:measure()==='contested'}));
   $('#votes-denominator').textContent=`${measureName()}: ${fmt(result.eligible)} votaciones comparables de ${fmt(result.ballots)} seleccionadas. ${fmt(result.withoutReference)} excluidas por empate o falta de referencia y ${fmt(result.inconsistent)} por inconsistencias. “No votó” entra en el denominador individual.`;
   const first=data.cobertura_anual?.find(y=>y.primera)?.primera||data.desde;
@@ -123,9 +121,11 @@ function drawTrend(series){
   if(endpoints.at(-1).label>h-m.bottom-12){const excess=endpoints.at(-1).label-(h-m.bottom-12);endpoints.forEach(p=>p.label-=excess);}
   for(const p of endpoints){
     const g=svg.append('g').attr('class','vote-endpoint').attr('data-series',p.s.id);labels.set(p.s.id,g);
-    g.append('path').attr('d',`M${x(p.last.year)+6},${p.natural}L${w-m.right+10},${p.label}H${w-m.right+18}`).attr('stroke',p.c).attr('fill','none').attr('stroke-opacity',.7);
+    g.append('path').attr('d',`M${x(p.last.year)+6},${p.natural}L${w-m.right+10},${p.label}H${w-m.right+18}`).attr('stroke',p.c).attr('fill','none').attr('stroke-opacity',p.last.year<max?.25:.7).attr('stroke-dasharray',p.last.year<max?'2 4':null);
     const text=g.append('text').attr('x',w-m.right+24).attr('y',p.label+4).attr('fill',p.c).attr('class','vote-series-label');
-    text.append('tspan').text(p.s.name.length>28?p.s.name.slice(0,26)+'…':p.s.name);
+    const limit=p.last.year<max?22:28;
+    const name=p.s.name.length>limit?p.s.name.slice(0,limit-2)+'…':p.s.name;
+    text.append('tspan').text(p.last.year<max?`${name} (${p.last.year})`:name);
     text.append('title').text(p.s.name);
   }
   let hoveredId=null;

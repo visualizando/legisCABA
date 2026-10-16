@@ -1,7 +1,7 @@
 import {categories,normalize,signers,filterProjects,personStats,makeGraph,partners,filterProfileProjects} from './model.mjs?v=20261014-filtros';
 import {bindCheckboxFilter,mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-explicacion';
 import {renderVotes} from './votes.mjs?v=20261016-explicacion';
-import {renderAtlas} from './atlas.mjs?v=20261016-navigation';
+import {renderAtlas} from './atlas.mjs?v=20261016-reset';
 
 const $ = selector => document.querySelector(selector);
 const fmt = n => new Intl.NumberFormat('es-AR').format(n);
@@ -248,6 +248,22 @@ function renderNetwork(){
   for(const n of nodes){n.x=w/2+(n.x-(extentX[0]+extentX[1])/2)*scale;n.y=h/2+(n.y-(extentY[0]+extentY[1])/2)*scale;}
   const spacing=d3.forceSimulation(nodes).force('collide',d3.forceCollide(14).iterations(4)).stop();
   for(let i=0;i<100;i++){spacing.tick();for(const n of nodes){n.x=Math.max(26,Math.min(w-70,n.x));n.y=Math.max(26,Math.min(h-26,n.y));}}
+  // Separate connected components using the visible edges, never political affiliation.
+  const neighbors=new Map(nodes.map(n=>[n.id,[]])),byId=new Map(nodes.map(n=>[n.id,n]));
+  for(const e of edges){neighbors.get(e.source.id).push(e.target.id);neighbors.get(e.target.id).push(e.source.id);}
+  const visited=new Set(),components=[];
+  for(const n of nodes){if(visited.has(n.id))continue;const component=[],queue=[n.id];visited.add(n.id);for(let i=0;i<queue.length;i++){const id=queue[i];component.push(byId.get(id));for(const next of neighbors.get(id)){if(!visited.has(next)){visited.add(next);queue.push(next);}}}components.push(component);}
+  components.sort((a,b)=>b.length-a.length);
+  if(components.length>1){
+    const sideWidth=Math.min(170,w*.29),mainWidth=w-sideWidth-32,main=components[0],others=components.slice(1);
+    const ex=d3.extent(main,n=>n.x),ey=d3.extent(main,n=>n.y),fit=Math.min((mainWidth-60)/(ex[1]-ex[0]||1),(h-120)/(ey[1]-ey[0]||1),1);
+    for(const n of main){n.x=mainWidth/2+(n.x-(ex[0]+ex[1])/2)*fit;n.y=h/2+(n.y-(ey[0]+ey[1])/2)*fit;}
+    layer.append('line').attr('x1',mainWidth+12).attr('x2',mainWidth+12).attr('y1',64).attr('y2',h-24).attr('stroke','#deddd2').attr('stroke-dasharray','3 4').attr('pointer-events','none');
+    const heading=layer.append('text').attr('x',mainWidth+26).attr('y',84).attr('fill','#596461').style('font-size','11px').attr('pointer-events','none');
+    heading.append('tspan').text('Sin vínculos con');heading.append('tspan').attr('x',mainWidth+26).attr('dy',15).text('la red principal');
+    const slot=(h-150)/others.length;
+    others.forEach((component,i)=>{const cx=mainWidth+sideWidth/2+16,cy=140+slot*(i+.5),r=component.length>1?Math.min(sideWidth/2-28,Math.max(18,component.length*6)):0;component.forEach((n,j)=>{const angle=2*Math.PI*j/component.length;n.x=cx+Math.cos(angle)*r;n.y=cy+Math.sin(angle)*r;});});
+  }
   layer.append('g').selectAll('line').data(edges).join('line').attr('class','network-edge').attr('data-a',e=>e.source.id).attr('data-b',e=>e.target.id).attr('x1',e=>e.source.x).attr('y1',e=>e.source.y).attr('x2',e=>e.target.x).attr('y2',e=>e.target.y).attr('stroke-width',e=>thickness(e.value)).attr('stroke-opacity',.35).append('title').text(e=>`${displayName(e.source.nombre)} / ${displayName(e.target.nombre)}: ${fmt(e.value)} proyectos`);
   const nodeGroup=layer.append('g').selectAll('g').data(nodes).join('g');
   nodeGroup.append('circle').attr('class','network-node').attr('cx',n=>n.x).attr('cy',n=>n.y).attr('r',n=>radius(n.total)).attr('fill',n=>group(n).color).attr('stroke','#596461').attr('stroke-width',1).attr('role','button').attr('tabindex',0).attr('aria-label',n=>`${displayName(n.nombre)}, ${group(n).nombre}, ${n.bloque_referencia}, ${fmt(n.total)} proyectos firmados; explorar conexiones`).on('click',(event,n)=>selectNetworkNode(n.id)).on('keydown',(event,n)=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectNetworkNode(n.id);}}).append('title').text(n=>`${displayName(n.nombre)} · ${group(n).nombre} · ${n.bloque_referencia} · ${fmt(n.total)} proyectos`);

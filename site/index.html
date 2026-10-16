@@ -8,8 +8,8 @@
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/political.css">
   <link rel="stylesheet" href="assets/official-blocks.css">
-  <link rel="stylesheet" href="assets/compact.css?v=20261014-network-checkboxes">
-  <link rel="stylesheet" href="assets/votes.css?v=20261016-components">
+  <link rel="stylesheet" href="assets/compact.css?v=20261016-drag-network">
+  <link rel="stylesheet" href="assets/votes.css?v=20261016-drag-network">
   <link rel="stylesheet" href="assets/atlas.css?v=20261016-navigation">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
   <script type="module" src="assets/app.mjs?v=20261016-reset-fixed"></script>
@@ -69,7 +69,7 @@
     <section id="view-red" class="view" hidden>
       <header class="network-intro"><h2>El conexionódromo</h2><p>¿Cómo se relacionan entre sí los legisladores según las coautorías de proyectos?</p></header>
       <div class="network-controls"><fieldset id="network-types" class="project-status-checks"><legend>Tipo de proyecto</legend></fieldset><label>Vínculo mínimo<select id="edge-min"><option value="5">5 proyectos compartidos</option><option value="15" selected>15 proyectos compartidos</option><option value="30">30 proyectos compartidos</option><option value="60">60 proyectos compartidos</option></select></label><label>Modelo de vínculo<select id="edge-mode"><option value="all">Todas las firmas entre sí</option><option value="author">Autor/a con coautores</option></select></label></div>
-      <p class="note">Cada círculo representa un legislador. Las líneas conectan proyectos compartidos. El color indica el espacio político. Los grupos sin vínculos con la red principal se muestran aparte, según los filtros elegidos.</p><div class="network-layout"><div class="network-canvas"><div class="network-graph-tools"><button type="button" id="network-reset" class="quiet">Centrar red ↺</button><div class="zoom-buttons"><button type="button" id="zoom-in" aria-label="Acercar red">+</button><button type="button" id="zoom-out" aria-label="Alejar red">−</button></div></div><div id="network-stats" class="network-stats"></div><svg id="network" aria-label="Red de proyectos compartidos; seleccionar un nodo para explorar sus conexiones"></svg><div id="network-legend" class="legend"></div></div><aside class="network-detail" id="network-detail" aria-live="polite"></aside></div>
+      <p class="note">Arrastrá los círculos para explorar la red. Cada uno representa un legislador. Las líneas conectan proyectos compartidos. El color indica el espacio político. Los grupos sin vínculos con la red principal se muestran aparte, según los filtros elegidos.</p><div class="network-layout"><div class="network-canvas"><div class="network-graph-tools"><button type="button" id="network-reset" class="quiet">Centrar red ↺</button><div class="zoom-buttons"><button type="button" id="zoom-in" aria-label="Acercar red">+</button><button type="button" id="zoom-out" aria-label="Alejar red">−</button></div></div><div id="network-stats" class="network-stats"></div><svg id="network" aria-label="Red de proyectos compartidos; seleccionar un nodo para explorar sus conexiones"></svg><div id="network-legend" class="legend"></div></div><aside class="network-detail" id="network-detail" aria-live="polite"></aside></div>
 
     </section>
 

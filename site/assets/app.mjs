@@ -21,7 +21,7 @@ function groupLegend(target){$(target).innerHTML=(dataset.grupos_visuales||datas
 const dateFmt = date => new Date(date+'T12:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'});
 const initials = name => name.split(',').map(s=>s.trim()[0]||'').join('').slice(0,2);
 let dataset, selected=[],visiblePeople=[],stats=new Map(),peopleById,route='panorama',personId=null;
-let graph, graphZoom, selectedNode=null;
+let graph, graphZoom, networkSimulation, selectedNode=null;
 const pagination = {all:0,profile:0};
 const state = {year:'all',category:'all'};
 const viewCopy = {
@@ -229,6 +229,7 @@ function renderAllProjects(){
 
 function networkProjects(){const types=new Set(checkedValues('#network-types'));return dataset.proyectos.filter(p=>types.has(p.categoria));}
 function renderNetwork(){
+  networkSimulation?.stop();
   const selected=networkProjects(),visiblePeople=dataset.legisladores.filter(p=>p.activo);
   const minimum=Number($('#edge-min').value),mode=$('#edge-mode').value;
   graph=makeGraph(selected,visiblePeople,mode,minimum);graphZoom=null;const svg=d3.select('#network');svg.selectAll('*').remove();
@@ -269,6 +270,21 @@ function renderNetwork(){
   nodeGroup.append('circle').attr('class','network-node').attr('cx',n=>n.x).attr('cy',n=>n.y).attr('r',n=>radius(n.total)).attr('fill',n=>group(n).color).attr('stroke','#596461').attr('stroke-width',1).attr('role','button').attr('tabindex',0).attr('aria-label',n=>`${displayName(n.nombre)}, ${group(n).nombre}, ${n.bloque_referencia}, ${fmt(n.total)} proyectos firmados; explorar conexiones`).on('click',(event,n)=>selectNetworkNode(n.id)).on('keydown',(event,n)=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectNetworkNode(n.id);}}).append('title').text(n=>`${displayName(n.nombre)} · ${group(n).nombre} · ${n.bloque_referencia} · ${fmt(n.total)} proyectos`);
   const topIds=new Set([...nodes].sort((a,b)=>b.total-a.total).slice(0,8).map(n=>n.id));
   nodeGroup.append('text').attr('class','network-label').attr('x',n=>n.x+radius(n.total)+4).attr('y',n=>n.y+3).attr('data-id',n=>n.id).style('display',n=>topIds.has(n.id)?null:'none').text(n=>displayName(n.nombre).split(',')[0]);
+  for(const n of nodes){n.homeX=n.x;n.homeY=n.y;n.vx=0;n.vy=0;n.side=components.length>1&&!components[0].includes(n);}
+  const boundary=components.length>1?w-Math.min(170,w*.29)-20:w;
+  const constrain=(n,x,y)=>({x:Math.max(n.side?boundary+18:20,Math.min(n.side?w-20:boundary-20,x)),y:Math.max(100,Math.min(h-24,y))});
+  networkSimulation=d3.forceSimulation(nodes).force('link',d3.forceLink(edges).id(n=>n.id).distance(e=>55+55/(1+e.value/30)).strength(.05)).force('charge',d3.forceManyBody().strength(-65).distanceMax(160)).force('collide',d3.forceCollide(14).iterations(3)).force('x',d3.forceX(n=>n.homeX).strength(.09)).force('y',d3.forceY(n=>n.homeY).strength(.09)).velocityDecay(.4).stop();
+  const updatePositions=()=>{
+    for(const n of nodes){const point=constrain(n,n.x,n.y);n.x=point.x;n.y=point.y;}
+    layer.selectAll('.network-edge').attr('x1',e=>e.source.x).attr('y1',e=>e.source.y).attr('x2',e=>e.target.x).attr('y2',e=>e.target.y);
+    nodeGroup.select('circle').attr('cx',n=>n.x).attr('cy',n=>n.y);
+    nodeGroup.select('text').attr('x',n=>n.x+11).attr('y',n=>n.y+3);
+  };
+  networkSimulation.on('tick',updatePositions);
+  nodeGroup.select('circle').call(d3.drag().container(()=>layer.node()).clickDistance(4)
+    .on('start',(event,n)=>{event.sourceEvent.stopPropagation();if(!event.active)networkSimulation.alpha(.3).alphaTarget(.12).restart();n.fx=n.x;n.fy=n.y;})
+    .on('drag',(event,n)=>{const point=constrain(n,event.x,event.y);n.fx=point.x;n.fy=point.y;})
+    .on('end',(event,n)=>{if(!event.active)networkSimulation.alphaTarget(0);n.fx=null;n.fy=null;}));
   graph.topIds=topIds;
   if(selectedNode&&!graph.nodes.some(n=>n.id===selectedNode))selectedNode=null;
   if(selectedNode)highlightNetwork();renderNetworkDetail();

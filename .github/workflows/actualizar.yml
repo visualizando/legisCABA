@@ -41,8 +41,10 @@ jobs:
         run: |
           python prepare_site.py --refresh
           python commissions.py --refresh
+          python tools/sync_sessions.py
           node --test tests/model.test.mjs
           node --test tests/commissions.test.mjs
+          node --test tests/sessions.test.mjs
           python tools/package_data.py pack
       - name: Guardar datos
         run: |

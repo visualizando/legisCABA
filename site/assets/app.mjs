@@ -1,3 +1,4 @@
+import {renderSessions} from './sessions.mjs?v=20261106';
 import {renderCommissions,renderMiniAgenda} from './commissions.mjs?v=20261106-compact';
 import {categories,normalize,signers,filterProjects,personStats,makeGraph,partners,filterProfileProjects} from './model.mjs?v=20261014-filtros';
 import {bindCheckboxFilter,mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-explicacion';
@@ -35,6 +36,7 @@ const viewCopy = {
   red:['','Análisis',''],
   votaciones:['','Votaciones',''],
   comisiones:['','Comisiones',''],
+  sesiones:['','Monitor de sesiones',''],
   ficha:['','Ficha',''],
   metodologia:['','Metodología',''],
 };
@@ -324,13 +326,14 @@ function render(){
   $('#page-intro').hidden=route==='inicio';
   const copy=viewCopy[route];$('#eyebrow').textContent=copy[0];$('#page-title').innerHTML=copy[1];$('#page-description').textContent=copy[2];$('#page-description').hidden=!copy[2];$('#eyebrow').hidden=!copy[0];
   if(route==='ficha'&&peopleById.has(personId))$('#page-title').textContent=displayName(peopleById.get(personId).nombre);
-  $('.filters').hidden=atlasVisible||['inicio','metodologia','legisladores','red','votaciones','comisiones'].includes(route);
+  $('.filters').hidden=atlasVisible||['inicio','metodologia','legisladores','red','votaciones','comisiones','sesiones'].includes(route);
   const activeLabel=$('#active-only').closest('label');(route==='legisladores'?$('#people-filters'):$('#global-filters')).append(activeLabel);document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='view-'+route);
   document.querySelectorAll('nav a').forEach(a=>{if(a.hash==='#'+(route==='ficha'?'legisladores':route))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   document.title=['inicio','panorama'].includes(route)?'LegisCABA — Monitor parlamentario':`${route==='red'?'Red de coautorías':route==='metodologia'?'Cómo leer los datos':route[0].toUpperCase()+route.slice(1)} — LegisCABA`;
   if(route==='panorama')renderOverview();if(route==='legisladores')renderPeople();if(route==='ficha')renderProfile();if(route==='proyectos'){if(atlasVisible)renderAtlas($('#project-atlas'));else renderAllProjects();}if(route==='red')renderNetwork();
   if(route==='votaciones')renderVotes(dataset);
   if(route==='comisiones')renderCommissions();
+  if(route==='sesiones')renderSessions();
   if(route==='inicio')renderMiniAgenda();
 }
 function applyFilters(){

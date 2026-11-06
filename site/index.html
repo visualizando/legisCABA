@@ -30,9 +30,10 @@
   <link rel="stylesheet" href="assets/atlas.css?v=20261016-navigation">
   <link rel="stylesheet" href="assets/landing.css?v=20261106-seis">
   <link rel="stylesheet" href="assets/loading.css?v=20261106">
+  <link rel="stylesheet" href="assets/sessions.css?v=20261106">
   <link rel="stylesheet" href="assets/commissions.css?v=20261106-compact">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261106-comisiones-compact"></script>
+  <script type="module" src="assets/app.mjs?v=20261106-sesiones"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -41,7 +42,7 @@
   <div class="masthead-note">Monitoreo de la legislatura<br><span>de la Ciudad de Buenos Aires</span></div>
   <span class="edition">Ciclo iniciado el 10.12.2023</span>
 </header>
-<div class="navline"><nav class="wrap" aria-label="Secciones"><a href="#inicio" aria-current="page">Inicio</a><a href="#panorama">Panorama</a><a href="#legisladores">Legisladores</a><a href="#proyectos">Proyectos</a><a href="#red">Red de legisladores</a><a href="#votaciones">Oficialómetro</a><a href="#comisiones">Comisiones</a><a href="#metodologia">Metodología</a></nav></div>
+<div class="navline"><nav class="wrap" aria-label="Secciones"><a href="#inicio" aria-current="page">Inicio</a><a href="#panorama">Panorama</a><a href="#legisladores">Legisladores</a><a href="#proyectos">Proyectos</a><a href="#red">Red de legisladores</a><a href="#votaciones">Oficialómetro</a><a href="#comisiones">Comisiones</a><a href="#sesiones">Sesiones</a><a href="#metodologia">Metodología</a></nav></div>
 <main id="contenido" class="wrap" tabindex="-1">
   <section id="view-inicio" class="view landing" aria-labelledby="landing-title">
     <header class="landing-intro">
@@ -74,6 +75,7 @@
         <div class="landing-feature-body"><h2>Buscador de proyectos</h2><p>Expedientes, autores y estados.</p></div>
       </a>
     </div>
+    <p class="landing-method"><a href="#sesiones">Monitor de sesiones →</a> Fechas, tipos y comparación de la actividad desde 1997.</p>
     <section id="home-agenda" class="commission-mini" aria-label="Próximas reuniones de comisiones"></section>
     <p class="landing-method">Datos públicos de la Legislatura porteña. <a href="#metodologia">Cómo leer los datos</a></p>
   </section>
@@ -127,6 +129,7 @@
 
     </section>
 
+    <section id="view-sesiones" class="view" hidden></section>
     <section id="view-comisiones" class="view" hidden></section>
 
     <section id="view-votaciones" class="view" hidden>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Proyectos y coautorías de la Legislatura porteña desde diciembre de 2023.">
+  <meta name="description" content="Explorá la Legislatura porteña: el oficialómetro, la red de legisladores, el mapa temático de proyectos y las fichas de sus protagonistas.">
   <title>LegisCABA — Monitor parlamentario</title>
   <link rel="stylesheet" href="assets/style.css">
   <link rel="stylesheet" href="assets/political.css">
@@ -11,18 +11,52 @@
   <link rel="stylesheet" href="assets/compact.css?v=20261016-drag-network">
   <link rel="stylesheet" href="assets/votes.css?v=20261016-drag-network">
   <link rel="stylesheet" href="assets/atlas.css?v=20261016-navigation">
+  <link rel="stylesheet" href="assets/landing.css?v=20261106-seis">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261016-reset-fixed"></script>
+  <script type="module" src="assets/app.mjs?v=20261106-seis"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
 <header class="masthead wrap">
-  <a class="brand" href="#panorama" aria-label="¿En qué anda LegisCABA?, ir al panorama"><span class="brand-icon" aria-hidden="true"><i></i><i></i><i></i></span><span>¿En qué anda LegisCABA?</span></a>
+  <a class="brand" href="#inicio" aria-label="¿En qué anda LegisCABA?, ir al inicio"><span class="brand-icon" aria-hidden="true"><i></i><i></i><i></i></span><span>¿En qué anda LegisCABA?</span></a>
   <div class="masthead-note">Monitoreo de la legislatura<br><span>de la Ciudad de Buenos Aires</span></div>
   <span class="edition">Ciclo iniciado el 10.12.2023</span>
 </header>
-<div class="navline"><nav class="wrap" aria-label="Secciones"><a href="#panorama">Panorama</a><a href="#legisladores">Legisladores</a><a href="#proyectos">Proyectos</a><a href="#red">Análisis</a><a href="#votaciones">Votaciones</a><a href="#metodologia">Metodología</a></nav></div>
+<div class="navline"><nav class="wrap" aria-label="Secciones"><a href="#inicio" aria-current="page">Inicio</a><a href="#panorama">Panorama</a><a href="#legisladores">Legisladores</a><a href="#proyectos">Proyectos</a><a href="#red">Red de legisladores</a><a href="#votaciones">Oficialómetro</a><a href="#metodologia">Metodología</a></nav></div>
 <main id="contenido" class="wrap" tabindex="-1">
+  <section id="view-inicio" class="view landing" aria-labelledby="landing-title">
+    <header class="landing-intro">
+      <h1 id="landing-title">La Legislatura, para explorar</h1>
+      <p>Qué votan, con quiénes trabajan y qué proyectos presentan.</p>
+    </header>
+    <div class="landing-features">
+      <a class="landing-feature" href="#votaciones">
+        <img class="landing-preview" src="assets/previews/oficialometro.svg?v=2" width="600" height="340" alt="Vista del oficialómetro con las trayectorias reales de los bloques.">
+        <div class="landing-feature-body"><h2>El oficialómetro</h2><p>Cuánto coincide cada bloque con el PRO al votar.</p></div>
+      </a>
+      <a class="landing-feature" href="#red">
+        <img class="landing-preview" src="assets/previews/red.svg?v=2" width="600" height="340" alt="Vista real de la red de coautorías entre legisladores.">
+        <div class="landing-feature-body"><h2>La red de legisladores</h2><p>Quiénes presentan proyectos juntos.</p></div>
+      </a>
+      <a class="landing-feature" href="#proyectos">
+        <img class="landing-preview" src="assets/previews/proyectos.svg?v=2" width="600" height="340" alt="Vista del atlas real de proyectos de ley agrupados por tema.">
+        <div class="landing-feature-body"><h2>El mapa de proyectos</h2><p>Los proyectos de ley, agrupados por tema.</p></div>
+      </a>
+      <a class="landing-feature" href="#panorama">
+        <img class="landing-preview" src="assets/previews/panorama.svg" width="600" height="340" alt="Preview de los gráficos del panorama legislativo.">
+        <div class="landing-feature-body"><h2>Panorama</h2><p>La actividad en números.</p></div>
+      </a>
+      <a class="landing-feature" href="#legisladores">
+        <img class="landing-preview" src="assets/previews/legisladores.svg" width="600" height="340" alt="Preview de las fichas reales de legisladores.">
+        <div class="landing-feature-body"><h2>Legisladores</h2><p>Sus fichas y proyectos.</p></div>
+      </a>
+      <a class="landing-feature" href="#proyectos/listado">
+        <img class="landing-preview" src="assets/previews/buscador.svg" width="600" height="340" alt="Preview del listado real de expedientes.">
+        <div class="landing-feature-body"><h2>Buscador de proyectos</h2><p>Expedientes, autores y estados.</p></div>
+      </a>
+    </div>
+    <p class="landing-method">Datos públicos de la Legislatura porteña. <a href="#metodologia">Cómo leer los datos</a></p>
+  </section>
   <div id="load-state" role="status" class="loading">Cargando datos…</div>
   <noscript>Se necesita JavaScript para ver los datos.</noscript>
   <div id="app" hidden>
@@ -30,7 +64,7 @@
     <div id="project-view-controls" class="sort-controls project-views" role="group" aria-label="Vista de proyectos" hidden><button type="button" data-project-view="atlas" aria-pressed="true">Mapa temático</button><button type="button" data-project-view="listado" aria-pressed="false">Listado de proyectos</button></div>
     <form class="filters" id="global-filters" aria-label="Filtrar la actividad"><label>Presentados en<select id="year"><option value="all">2023-actualidad</option></select></label><label>Tipo de proyecto<select id="category"><option value="all">Todos los tipos</option><option value="ley">Proyectos de ley</option><option value="informes">Pedidos de informes*</option><option value="declaracion">Declaraciones</option><option value="resolucion">Otras resoluciones</option></select></label><label class="check"><input id="active-only" type="checkbox" checked> Solo legisladores actuales</label><button type="button" id="reset-filters" class="quiet">Restablecer filtros ↺</button><p id="filter-count" class="sr-only" role="status"></p></form>
 
-    <section id="view-panorama" class="view">
+    <section id="view-panorama" class="view" hidden>
       <div class="metrics" id="overview-metrics"></div>
       <div class="section-heading"><div><h2>Proyectos</h2></div><p>Informes*: clasificación por sumario.</p></div>
       <div class="two-charts"><figure><figcaption><h3>Por tipo</h3><p>Proyectos únicos</p></figcaption><div id="type-chart" class="chart"></div><div id="type-chart-table" class="chart-data"></div></figure><figure><figcaption><h3>Por mes</h3><p>Último mes parcial</p></figcaption><div id="monthly-chart" class="chart"></div><div class="legend" id="type-legend"></div></figure></div>
@@ -126,6 +160,6 @@
     </section>
   </div>
 </main>
-<footer class="wrap"><div class="footer-identity"><a class="brand small" href="#panorama">¿En qué anda LegisCABA?</a><p>Monitoreo de la legislatura de la Ciudad de Buenos Aires</p><p>Por <a href="https://twitter.com/rusosnith" target="_blank" rel="noopener">Andrés Snitcofsky ↗</a></p></div><div class="footer-source">Fuente: Legislatura de la Ciudad de Buenos Aires<br><span id="date-range"></span><br><span id="updated"></span></div><div class="footer-links"><a class="action-link" href="https://github.com/visualizando/legisCABA" target="_blank" rel="noopener">GitHub ↗</a><a class="action-link" href="#metodologia">Metodología ↗</a></div></footer>
+<footer class="wrap"><div class="footer-identity"><a class="brand small" href="#inicio">¿En qué anda LegisCABA?</a><p>Monitoreo de la legislatura de la Ciudad de Buenos Aires</p><p>Por <a href="https://twitter.com/rusosnith" target="_blank" rel="noopener">Andrés Snitcofsky ↗</a></p></div><div class="footer-source">Fuente: Legislatura de la Ciudad de Buenos Aires<br><span id="date-range"></span><br><span id="updated"></span></div><div class="footer-links"><a class="action-link" href="https://github.com/visualizando/legisCABA" target="_blank" rel="noopener">GitHub ↗</a><a class="action-link" href="#metodologia">Metodología ↗</a></div></footer>
 </body>
 </html>

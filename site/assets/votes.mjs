@@ -3,6 +3,7 @@ import {mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-ex
 import {personAutocomplete} from './person-autocomplete.mjs?v=20261016-explicacion';
 import {chartPng} from './chart-image.mjs?v=20261016-explicacion';
 import {categories,normalize} from './model.mjs';
+import {skeletonMarkup} from './loading.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=n=>new Intl.NumberFormat('es-AR').format(n);
@@ -17,6 +18,7 @@ export async function renderVotes(monitor){
   if(data){render();return;}
   if(loading)return;
   loading=true;$('#votes-state').hidden=false;$('#votes-state').textContent='Consultando la base de votaciones…';
+  $('#votes-loading').innerHTML=skeletonMarkup('chart');$('#votes-loading').hidden=false;
   try{
     const response=await fetch('data/votaciones.json',{cache:'no-cache'});
     if(!response.ok)throw new Error('No se pudo leer la base');data=await response.json();
@@ -42,7 +44,7 @@ export async function renderVotes(monitor){
     data=null;$('#votes-state').hidden=false;
     $('#votes-state').innerHTML='No se pudo cargar la base de votos. <button type="button" id="votes-retry">Reintentar</button>';
     $('#votes-retry').addEventListener('click',()=>renderVotes());
-  }finally{loading=false;}
+  }finally{loading=false;$('#votes-loading').hidden=true;$('#votes-loading').replaceChildren();}
 }
 function filters(){return {year:$('#votes-year').value,types:expandVoteTypes(checkedValues('#votes-types')),
   reference:['119','86','83','7'],grouped:$('#votes-grouped').checked,

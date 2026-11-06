@@ -1,7 +1,8 @@
 import {categories,normalize,signers,filterProjects,personStats,makeGraph,partners,filterProfileProjects} from './model.mjs?v=20261014-filtros';
 import {bindCheckboxFilter,mountTypeFilter,checkedValues} from './checkbox-filter.mjs?v=20261016-explicacion';
-import {renderVotes} from './votes.mjs?v=20261016-explicacion';
-import {renderAtlas} from './atlas.mjs?v=20261016-reset-fixed';
+import {renderVotes} from './votes.mjs?v=20261106-loading';
+import {renderAtlas} from './atlas.mjs?v=20261106-loading';
+import {loadingMarkup} from './loading.mjs';
 
 const $ = selector => document.querySelector(selector);
 const fmt = n => new Intl.NumberFormat('es-AR').format(n);
@@ -24,6 +25,7 @@ let dataset, selected=[],visiblePeople=[],stats=new Map(),peopleById,route='inic
 let graph, graphZoom, networkSimulation, selectedNode=null;
 const pagination = {all:0,profile:0};
 const state = {year:'all',category:'all'};
+let ready=false,loadFailed=false;
 const viewCopy = {
   inicio:['','Inicio',''],
   panorama:['','Panorama',''],
@@ -343,7 +345,21 @@ function navigate(){
   render();window.scrollTo({top:0,behavior:'instant'});
 }
 const debounce=(fn,ms=120)=>{let timer;return(...args)=>{clearTimeout(timer);timer=setTimeout(()=>fn(...args),ms);};};
+function loadingRoute(){
+  const [next,detail]=location.hash.slice(1).split('/');
+  if(next==='contenido')return;
+  const current=Object.hasOwn(viewCopy,next)?next:'inicio';
+  document.querySelectorAll('nav a').forEach(a=>{if(a.hash==='#'+(current==='ficha'?'legisladores':current))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+  $('#view-inicio').hidden=current!=='inicio';
+  $('#load-state').hidden=current==='inicio';
+  if(current==='inicio')return;
+  if(loadFailed)return;
+  const kind=current==='legisladores'?'cards':current==='panorama'?'overview':current==='proyectos'?(detail==='listado'?'list':'map'):'chart';
+  $('#load-state').innerHTML=`<h1>${viewCopy[current][1]}</h1>${loadingMarkup(kind,'Cargando datos…')}`;
+}
+window.addEventListener('hashchange',()=>{if(ready)navigate();else loadingRoute();});
 async function init(){
+  loadingRoute();
   try{
     const response=await fetch('data/monitor.json',{cache:'no-cache'});if(!response.ok)throw new Error('No se pudo leer monitor.json');dataset=await response.json();
     if(!globalThis.d3)throw new Error('D3 no está disponible');
@@ -367,10 +383,9 @@ async function init(){
     $('#edge-min').addEventListener('change',renderNetwork);$('#edge-mode').addEventListener('change',renderNetwork);
     $('#network-reset').addEventListener('click',()=>{selectedNode=null;renderNetwork();});
     $('#zoom-in').addEventListener('click',()=>{if(graphZoom)d3.select('#network').call(graphZoom.scaleBy,1.4);});$('#zoom-out').addEventListener('click',()=>{if(graphZoom)d3.select('#network').call(graphZoom.scaleBy,1/1.4);});
-    window.addEventListener('hashchange',navigate);
     $('#project-view-controls').querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{location.hash=button.dataset.projectView==='atlas'?'proyectos':'proyectos/listado';}));
     window.addEventListener('resize',debounce(()=>{if(route==='panorama')renderOverview();if(route==='ficha')renderProfile();if(route==='red')renderNetwork();},200));
-    applyFilters();navigate();
-  }catch(error){$('#load-state').innerHTML=`<p>No se pudieron cargar los datos. Recargá la página.</p><p class="note">${esc(error.message)}</p><button type="button" id="retry-load">Volver a cargar</button>`;$('#retry-load').addEventListener('click',()=>location.reload());}
+    ready=true;applyFilters();navigate();
+  }catch(error){loadFailed=true;$('#load-state').hidden=false;$('#load-state').innerHTML=`<p role="status">No se pudieron cargar los datos. Recargá la página.</p><p class="note">${esc(error.message)}</p><button type="button" id="retry-load">Volver a cargar</button>`;$('#retry-load').addEventListener('click',()=>location.reload());}
 }
 init();

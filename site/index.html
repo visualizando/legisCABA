@@ -12,8 +12,9 @@
   <link rel="stylesheet" href="assets/votes.css?v=20261016-drag-network">
   <link rel="stylesheet" href="assets/atlas.css?v=20261016-navigation">
   <link rel="stylesheet" href="assets/landing.css?v=20261106-seis">
+  <link rel="stylesheet" href="assets/loading.css?v=20261106">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261106-seis"></script>
+  <script type="module" src="assets/app.mjs?v=20261106-loading"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -57,7 +58,7 @@
     </div>
     <p class="landing-method">Datos públicos de la Legislatura porteña. <a href="#metodologia">Cómo leer los datos</a></p>
   </section>
-  <div id="load-state" role="status" class="loading">Cargando datos…</div>
+  <div id="load-state" class="loading" hidden></div>
   <noscript>Se necesita JavaScript para ver los datos.</noscript>
   <div id="app" hidden>
     <section class="hero" id="page-intro"><div><p class="eyebrow" id="eyebrow"></p><h1 id="page-title">Panorama</h1><p class="intro" id="page-description"></p></div></section>
@@ -110,6 +111,7 @@
     <section id="view-votaciones" class="view" hidden>
       <header class="votes-intro"><h2>El oficialómetro</h2><p>¿Cuánto coincide el voto de cada bloque con el bloque oficialista? <span>Idea original de <a href="https://decadavotada.andytow.com/oficialism-l.php" target="_blank" rel="noopener">Andy Tow ↗</a>.</span></p></header>
       <p id="votes-state" class="votes-status" role="status" hidden></p>
+      <div id="votes-loading" hidden></div>
       <div id="votes-controls" class="section-tools votes-controls" hidden>
         <label>Año de votación<select id="votes-year"></select></label>
         <fieldset id="votes-types" class="project-status-checks"><legend>Tipo de proyecto</legend></fieldset>

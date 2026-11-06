@@ -1,0 +1,27 @@
+.skeleton { margin-block: 16px 24px; }
+.skeleton-block { display: block; background: #e6e5df; border-radius: 5px; }
+.skeleton-controls { display: flex; gap: 20px; margin-bottom: 24px; }
+.skeleton-controls i { width: 180px; max-width: 30%; height: 44px; }
+.skeleton-plot { min-height: 360px; height: clamp(360px, 42vw, 600px); }
+.skeleton-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.skeleton-card { border: 1px solid var(--line); border-radius: 8px; padding: 20px; }
+.skeleton-line { height: 14px; width: 68%; margin-bottom: 16px; }
+.skeleton-line + .skeleton-line { width: 42%; }
+.skeleton-card-chart { height: 130px; margin-block: 24px 8px; }
+.skeleton-list { display: grid; gap: 16px; }
+.skeleton-list .skeleton-card-chart { height: 44px; }
+.skeleton-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 28px; }
+.skeleton-metrics i { height: 80px; }
+.skeleton-charts { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; }
+.skeleton-map { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 24px; }
+#load-state { padding-block: 24px; }
+#load-state h1 { font-size: 32px; margin-bottom: 24px; }
+#votes-loading { margin-top: 24px; }
+@media (max-width: 800px) {
+  .skeleton-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .skeleton-map { grid-template-columns: 1fr; }
+}
+@media (max-width: 650px) {
+  .skeleton-cards, .skeleton-charts { grid-template-columns: 1fr; }
+  .skeleton-metrics { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+}

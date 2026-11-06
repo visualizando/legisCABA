@@ -1,5 +1,6 @@
 """Recolecta votaciones nominales desde 2016 y conserva observaciones en SQLite."""
 import argparse
+from contextlib import closing
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timezone
 import hashlib
@@ -10,6 +11,7 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from incremental import pending_start
 
 BASE = 'https://parlamentaria.legislatura.gob.ar/'
 START = '2016-01-01'
@@ -176,19 +178,35 @@ def main():
     parser.add_argument('--db', default='data/votaciones.sqlite')
     parser.add_argument('--output', default='site/data/votaciones.json')
     parser.add_argument('--resume', action='store_true', help='Reutilizar respuestas locales de una carga interrumpida; no usar para refrescar')
+    parser.add_argument('--incremental', action='store_true', help='Consultar solo el período pendiente y conservar el histórico')
+    parser.add_argument('--since', type=date.fromisoformat, help='Inicio explícito para revisar correcciones históricas')
+    parser.add_argument('--overlap-days', type=int, default=7)
     args = parser.parse_args()
     RESUME = args.resume
     end = date.fromisoformat(args.until)
+    if args.overlap_days < 0 or (args.incremental and (args.since or args.resume)):
+        parser.error('Solapamiento inválido o modos incompatibles')
+    completed, known_projects = None, set()
+    if args.incremental and Path(args.db).exists():
+        with closing(connect(args.db)) as previous:
+            completed = previous.execute('SELECT MAX(until_date) FROM runs').fetchone()[0]
+            known_projects = {r[0] for r in previous.execute("SELECT id FROM current WHERE kind='project'")}
+    start = pending_start(completed, START, args.overlap_days) if args.incremental else (args.since or date.fromisoformat(START))
+    if args.incremental and completed and start > end and end <= date.today():
+        print('El rango de votaciones ya está completo hasta el corte solicitado')
+        return
+    if start > end or end > date.today() or start < date.fromisoformat(START):
+        parser.error('Rango de fechas inválido')
     now = datetime.now(timezone.utc).isoformat()
     # Annual windows avoid server timeouts on broad historical catalog queries.
     session_map = {}
-    for year in range(int(START[:4]), end.year+1):
-        entries = fetch('GetSesionesAvanzado', {'FechaDesde':f'01/01/{year}',
+    for year in range(start.year, end.year+1):
+        entries = fetch('GetSesionesAvanzado', {'FechaDesde':max(start, date(year,1,1)).strftime('%d/%m/%Y'),
             'FechaHasta': min(date(year,12,31),end).strftime('%d/%m/%Y')})
         for entry in entries:
             session_map[entry['id_sesion_lp']] = entry
     sessions = list(session_map.values())
-    if not sessions:
+    if not sessions and not completed:
         raise ValueError('Catálogo de sesiones vacío; se conserva la base anterior')
     ballots = {}
     def get_ballots(session):
@@ -197,7 +215,7 @@ def main():
     with ThreadPoolExecutor(max_workers=2) as pool:
         for session, entries in pool.map(get_ballots, sessions):
             day = iso(session['fch_sesion_lp'])
-            if not START <= day <= args.until:
+            if not start.isoformat() <= day <= args.until:
                 raise ValueError('Sesión fuera del rango consultado')
             for entry in entries:
                 key = entry['id_votacion']
@@ -210,7 +228,7 @@ def main():
                     old['expedientes'] = sorted(set(old['expedientes'] + entry['expedientes']))
                 else:
                     ballots[key] = entry
-    if not ballots:
+    if not ballots and not completed:
         raise ValueError('Sin votaciones; se conserva la base anterior')
     def get_votes(key):
         rows = fetch('GetVotaciones', {'IdVotacionAsunto': key, 'IdExpediente': '', 'IdSesion': '', 'IdLegislador': ''})
@@ -238,7 +256,7 @@ def main():
         histories = dict(pool.map(get_blocks, ids))
     # Batch metadata supplies the same project categories used elsewhere on the site.
     from prepare_site import category
-    exp_ids = sorted({eid for b in ballots.values() for eid in b['expedientes']}, key=int)
+    exp_ids = sorted({eid for b in ballots.values() for eid in b['expedientes']} - known_projects, key=int)
     projects = {}
     for offset in range(0, len(exp_ids), 80):
         batch = exp_ids[offset:offset+80]
@@ -249,8 +267,8 @@ def main():
             projects[r['id_expediente']] = {'id':r['id_expediente'], 'numero':r['nro_de_expediente'],
                 'tipo':tipo, 'sumario':r['sumario'],
                 'categoria':category({'tipo':tipo,'sumario':r['sumario']}) if tipo in ('LEY','DECLARACION','RESOLUCION') else 'otros'}
-        if not entries:
-            raise ValueError('Metadatos de expedientes vacíos')
+        if set(batch) - projects.keys():
+            raise ValueError('Metadatos de expedientes incompletos')
     print(f'{len(projects)} expedientes clasificados', flush=True)
     Path(args.db).parent.mkdir(parents=True, exist_ok=True)
     db = connect(args.db)
@@ -261,7 +279,8 @@ def main():
                                  ('ballot', ballots), ('votes', details), ('blocks', histories), ('project', projects)]:
                 for key, value in values.items():
                     save(db, kind, key, value, now)
-            data = export(db, now, args.until)
+            previous_end = db.execute('SELECT MAX(until_date) FROM runs').fetchone()[0]
+            data = export(db, now, max(args.until, previous_end or args.until))
             for p in projects.values():
                 db.execute('INSERT OR REPLACE INTO proyectos VALUES (?,?,?,?,?)',
                     (p['id'],p['numero'],p['tipo'],p['categoria'],p['sumario']))
@@ -276,7 +295,7 @@ def main():
                         data['legisladores'][v['legislador']], v['bloque'], data['bloques'].get(v['bloque']), v['voto'], v['presencia']))
                 for eid in b['expedientes']:
                     db.execute('INSERT INTO votacion_expedientes VALUES (?,?)', (b['id'], eid))
-            db.execute('INSERT INTO runs VALUES (?,?,?,?)', (now, START, args.until, json.dumps(data['resumen'])))
+            db.execute('INSERT INTO runs VALUES (?,?,?,?)', (now, start.isoformat(), args.until, json.dumps(data['resumen'])))
         target = Path(args.output)
         target.parent.mkdir(parents=True, exist_ok=True)
         temp = target.with_suffix('.tmp')

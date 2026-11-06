@@ -1,12 +1,9 @@
-name: Actualizar expedientes
+name: Actualizar datasets mensualmente
 on:
   schedule:
-    - cron: '30 9 * * *'
+    # Día 2, 06:30 de Buenos Aires; después de la actualización del CSV externo.
+    - cron: '30 9 2 * *'
   workflow_dispatch:
-    inputs:
-      years:
-        description: Años a actualizar, separados por espacios (vacío = todo el ciclo desde 2023)
-        required: false
 permissions:
   contents: write
 concurrency:
@@ -14,44 +11,36 @@ concurrency:
   cancel-in-progress: false
 jobs:
   actualizar:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m unittest discover -s tests -v
-      - run: python tools/package_data.py unpack
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Consultar años
-        env:
-          REQUESTED_YEARS: ${{ inputs.years }}
+      - name: Restaurar snapshots versionados
+        run: python tools/package_data.py unpack
+      - name: Verificar recolectores y modelos del sitio
         run: |
-          python - <<'PY'
-          import datetime, os, subprocess
-          current = datetime.date.today().year
-          years = os.environ.get('REQUESTED_YEARS', '').split() or [str(y) for y in range(2023, current+1)]
-          years = [str(int(y)) for y in years]
-          subprocess.run(['python', 'scraper.py', '--years', *years, '--from-date', '2023-12-10'], check=True)
-          PY
-      - name: Regenerar datos del micrositio
-        run: |
-          python prepare_site.py --refresh
-          python commissions.py --refresh
-          python tools/sync_sessions.py
-          node --test tests/model.test.mjs
-          node --test tests/commissions.test.mjs
-          node --test tests/sessions.test.mjs
-          python tools/package_data.py pack
-      - name: Guardar datos
+          python -m unittest discover -s tests -v
+          node --test tests/*.test.mjs
+      - name: Actualizar todos los datasets operativos
+        run: python tools/update_data.py
+      - name: Verificar exportaciones actualizadas
+        run: node --test tests/*.test.mjs
+      - name: Guardar una actualización completa
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/ site/data/
+          git add data/*.gz data/resumen.json site/data/
           if ! git diff --cached --quiet; then
-            git commit -m 'Actualizar datos parlamentarios'
-            git push
+            git commit -m 'Actualizar datasets mensuales de forma incremental'
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi

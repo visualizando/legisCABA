@@ -1,5 +1,6 @@
 """Public parliamentary search -> versioned JSON and SQLite (stdlib only)."""
 import argparse
+from contextlib import closing
 import hashlib
 import json
 import re
@@ -10,6 +11,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from incremental import pending_start
 
 BASE = 'https://parlamentaria.legislatura.gob.ar/'
 
@@ -64,14 +66,39 @@ def request(method, params, delay):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument('--years', nargs='+', type=int, default=[date.today().year])
+    p.add_argument('--years', nargs='+', type=int)
+    p.add_argument('--incremental', action='store_true', help='Retomar desde el último rango completo')
+    p.add_argument('--overlap-days', type=int, default=7)
     p.add_argument('--number', type=int, help='Consulta puntual para verificar conectividad')
     p.add_argument('--delay', type=float, default=1)
     p.add_argument('--chunk-days', type=int, default=2, help='Días por consulta; evita el filtro de año del servidor')
     p.add_argument('--from-date', type=date.fromisoformat, help='Fecha mínima de presentación, YYYY-MM-DD')
     p.add_argument('--output', type=Path, default=Path('data'))
     args = p.parse_args()
-    if args.delay < 0 or args.chunk_days < 1 or any(y < 1997 or y > date.today().year for y in args.years):
+    completed = None
+    if args.incremental:
+        if args.years or args.number is not None or args.from_date:
+            p.error('--incremental no se combina con años, número o fecha inicial')
+        database = args.output / 'legiscaba.sqlite'
+        if database.exists():
+            with closing(sqlite3.connect(database)) as db:
+                if db.execute("SELECT 1 FROM sqlite_master WHERE name='consultas'").fetchone():
+                    completed = db.execute('SELECT MAX(hasta) FROM consultas').fetchone()[0]
+        # Migrate the checked historical snapshot, not MAX(presentation date):
+        # a successfully queried period may contain no projects.
+        manifest = args.output / 'cobertura.json'
+        if not completed and database.exists() and manifest.exists():
+            completed = json.loads(manifest.read_text(encoding='utf-8'))['hasta']
+        if completed and date.fromisoformat(completed) > date.today():
+            p.error('El último rango completo está en el futuro')
+        args.from_date = pending_start(completed, '2023-12-10', args.overlap_days)
+        if args.from_date > date.today():
+            print('El rango de expedientes ya está completo hasta hoy')
+            return
+        args.years = list(range(args.from_date.year, date.today().year + 1))
+    else:
+        args.years = args.years or [date.today().year]
+    if args.delay < 0 or args.chunk_days < 1 or args.overlap_days < 0 or any(y < 1997 or y > date.today().year for y in args.years):
         p.error('Años o demora inválidos')
     records = {}
     # Refresh all selected years, including archived cases: old cases can change.
@@ -89,6 +116,8 @@ def main():
                     'Sumario': '', 'SumarioExacto': '0', 'FechaDesde': start.strftime('%d/%m/%Y'),
                     'FechaHasta': end.strftime('%d/%m/%Y'), 'AnioParlamentario': '', 'Limite': '',
                 }, args.delay)
+                if len(batch) >= 1000:
+                    raise ValueError('Posible respuesta truncada; reducir --chunk-days antes de publicar')
                 for item in batch:
                     submitted = datetime.strptime(item['fecha_presentacion'], '%d/%m/%Y %H:%M:%S').date()
                     if not start <= submitted <= end:
@@ -99,17 +128,19 @@ def main():
         for batch in batches:
             for item in batch:
                 records[item['id']] = item
-    if not records:
+    if not records and not (args.incremental and completed):
         raise ValueError('Consulta sin resultados; no se reemplazan los datos existentes')
     args.output.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).isoformat()
-    with sqlite3.connect(args.output / 'legiscaba.sqlite') as db:
+    with closing(sqlite3.connect(args.output / 'legiscaba.sqlite')) as db, db:
         db.executescript('''CREATE TABLE IF NOT EXISTS expedientes (
             id TEXT PRIMARY KEY, contenido TEXT NOT NULL, primera_observacion TEXT NOT NULL,
             ultima_observacion TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS versiones (
             id TEXT NOT NULL, hash TEXT NOT NULL, observado TEXT NOT NULL, contenido TEXT NOT NULL,
-            PRIMARY KEY(id, hash));''')
+            PRIMARY KEY(id, hash));
+            CREATE TABLE IF NOT EXISTS consultas (
+            observado TEXT PRIMARY KEY, desde TEXT NOT NULL, hasta TEXT NOT NULL);''')
         for item in records.values():
             content = json.dumps(item, ensure_ascii=False, sort_keys=True)
             digest = hashlib.sha256(content.encode()).hexdigest()
@@ -118,6 +149,9 @@ def main():
                 ON CONFLICT(id) DO UPDATE SET contenido=excluded.contenido,
                 ultima_observacion=excluded.ultima_observacion''', (item['id'], content, stamp, stamp))
         all_records = [json.loads(row[0]) for row in db.execute('SELECT contenido FROM expedientes ORDER BY id')]
+        if args.incremental:
+            db.execute('INSERT INTO consultas VALUES (?, ?, ?)',
+                       (stamp, args.from_date.isoformat(), date.today().isoformat()))
     payload = {'actualizado': stamp, 'total': len(all_records), 'expedientes': all_records}
     target = args.output / 'expedientes.json'
     temp = target.with_suffix('.tmp')

@@ -11,6 +11,7 @@ from collections import Counter
 from datetime import date, datetime, timezone
 from pathlib import Path
 from scraper import BASE
+from incremental import pending_start
 
 CACHE = Path('data/enrichment')
 COMPOSITION_SOURCE='https://www.legislatura.gob.ar/seccion/composicion-actual.html'
@@ -63,9 +64,34 @@ def category(project):
     return 'resolucion'
 
 
+def pending_sessions(sessions, previous, cutoff, overlap_days=7):
+    if not previous:
+        return sessions
+    start=pending_start(previous['enriquecido'],cutoff,overlap_days).isoformat()
+    known=set(previous.get('sesiones_catalogo',[]))
+    return [s for s in sessions
+            if datetime.strptime(s['fch_sesion_lp'],'%d/%m/%Y %H:%M:%S').date().isoformat()>=start
+            or ('sesiones_catalogo' in previous and s['id_sesion_lp'] not in known)]
+
+
+def retained_session_records(previous, pending):
+    refreshed={s['id_sesion_lp'] for s in pending}
+    return {p['id']:[e for e in p['sesiones'] if e['sesion'] not in refreshed]
+            for p in (previous or {}).get('proyectos',[])}
+
+
 def main():
     import argparse
-    p=argparse.ArgumentParser(); p.add_argument('--refresh',action='store_true'); args=p.parse_args()
+    p=argparse.ArgumentParser(); p.add_argument('--refresh',action='store_true')
+    p.add_argument('--incremental',action='store_true')
+    p.add_argument('--overlap-days',type=int,default=7)
+    args=p.parse_args()
+    if args.overlap_days < 0:
+        p.error('Solapamiento inválido')
+    previous_path=Path('site/data/monitor.json')
+    previous=json.loads(previous_path.read_text(encoding='utf-8')) if args.incremental and previous_path.exists() else None
+    if args.incremental:
+        args.refresh=True
     CACHE.mkdir(parents=True,exist_ok=True)
     source=json.loads(Path('data/expedientes.json').read_text(encoding='utf-8'))
     cutoff='2023-12-10'
@@ -76,9 +102,14 @@ def main():
     active=rows(get('GetDiputadosActivosNuevo',{'id_bloque':''},'active.xml',args.refresh),'diputados')
     sessions=rows(get('GetSesionesAvanzado',{'FechaDesde':date.fromisoformat(data['desde']).strftime('%d/%m/%Y'),
         'FechaHasta':date.fromisoformat(data['hasta']).strftime('%d/%m/%Y')},'sessions.xml',args.refresh),'sesiones')
+    if not sessions:
+        raise ValueError('Catálogo de sesiones vacío; se conserva la exportación anterior')
     lookup={r['id_legislador']:r for r in historic}
     current={r['id_legislador']:r for r in active}
-    session_records={}
+    if not current or not historic:
+        raise ValueError('Padrón vacío; se conserva la exportación anterior')
+    pending=pending_sessions(sessions,previous,cutoff,args.overlap_days)
+    session_records=retained_session_records(previous,pending)
     def session_fetch(s):
         sid=s['id_sesion_lp']
         body=get('GetAsuntosConsideradosByIdSesion',{'IdSesion':sid},f'session-{sid}.xml',args.refresh)
@@ -86,7 +117,7 @@ def main():
         print(f"Sesión {s['fch_sesion_lp']}: {len(entries)} asuntos",flush=True)
         return s,entries
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        for s,entries in pool.map(session_fetch,sessions):
+        for s,entries in pool.map(session_fetch,pending):
             for e in entries:
                 if e.get('id_expediente') and e['id_expediente']!='0':
                     session_records.setdefault(e['id_expediente'],[]).append({
@@ -114,6 +145,9 @@ def main():
             raise ValueError('La composición y el catálogo de bloques no coinciden: '+a['bloque'])
     groups=dict(official_blocks)
     def block_fetch(pid):
+        old=next((p for p in previous['legisladores'] if p['id']==pid),None) if previous else None
+        if old and pid not in current and not old['activo']:
+            return pid,old['bloques_historia']
         history=rows(get('GetLegisladoresBloques',{'id_legislador':pid},f'blocks-{pid}.xml',args.refresh),'LegisladorBloque')
         periods=[]
         for b in history:
@@ -126,6 +160,9 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         histories=dict(pool.map(block_fetch,sorted(person_ids)))
     def term_fetch(pid):
+        old=next((p for p in previous['legisladores'] if p['id']==pid),None) if previous else None
+        if old and pid not in current and not old['activo']:
+            return pid,old['mandatos']
         body=get('GetLegisladoresMandatos',{'id_legislador':pid},f'terms-{pid}.xml',args.refresh)
         terms=[]
         def iso(value):
@@ -186,7 +223,8 @@ def main():
         visual['bancas']=sum(p['activo'] and p['grupo_visual']==visual['id'] for p in people)
         visual['agrupacion']=True
     output={'actualizado':data['actualizado'],'enriquecido':datetime.now(timezone.utc).isoformat(),'desde':data['desde'],'hasta':data['hasta'],
-        'sesiones_consultadas':len(sessions),'legisladores':people,'proyectos':projects,
+        'sesiones_consultadas':len(sessions),'sesiones_catalogo':[s['id_sesion_lp'] for s in sessions],
+        'legisladores':people,'proyectos':projects,
         'grupos':sorted(groups.values(),key=lambda b:(not b['vigente'],b['nombre'])),
         'grupos_fuente':COMPOSITION_SOURCE,
         'grupos_visuales':visual_groups,'bloques_por_espacio':visual_blocks,

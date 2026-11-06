@@ -43,7 +43,7 @@ python commissions.py --refresh
 python commissions.py --from-date 2023-12-10 --refresh
 ```
 
-La primera carga consulta desde el 10/12/2023; con una base existente, la actualización por defecto vuelve a consultar los últimos 90 días y los próximos 60. La segunda variante refresca todo el ciclo. El workflow diario de datos ejecuta el recolector y conserva `data/comisiones.sqlite.gz` y `site/data/comisiones.json.gz`; Pages los descomprime antes de publicar. `data/commission-cache/` conserva respuestas XML originales para retomar la carga inicial; `--refresh` evita reutilizar esa caché.
+La primera carga consulta desde el 10/12/2023; con una base existente, el modo manual por defecto vuelve a consultar los últimos 90 días y los próximos 60. El workflow mensual usa `--incremental`: retoma desde la última consulta completada, con siete días de solapamiento y los próximos 60 días. La segunda variante refresca todo el ciclo. El workflow mensual de datos ejecuta el recolector y conserva `data/comisiones.sqlite.gz` y `site/data/comisiones.json.gz`; Pages los descomprime antes de publicar. `data/commission-cache/` conserva respuestas XML originales para retomar la carga inicial; `--refresh` evita reutilizar esa caché.
 
 SQLite conserva el último contenido, versiones consecutivas distintas (incluso si un cambio se revierte), observaciones de presencia por consulta y rangos consultados. Solo se guarda una ejecución después de completar sus consultas. Las reuniones que dejan de aparecer permanecen en la base, marcadas como ausentes en el rango actualizado, sin calificarlas como canceladas.
 
@@ -77,7 +77,7 @@ node --test tests/model.test.mjs
 python -m unittest discover -s tests -v
 ```
 
-Sin `--refresh`, el enriquecimiento reutiliza XML en `data/enrichment/` (excluido de Git). `--refresh` vuelve a consultar padrones y sesiones. El workflow de actualización regenera `site/data/monitor.json` después de recolectar expedientes. Las exportaciones generales `proyectos.json` y `resumen.json` corresponden a la carga histórica; para el micrositio la fuente vigente es `expedientes.json` cruzada por `prepare_site.py`.
+Sin `--refresh`, el enriquecimiento reutiliza XML en `data/enrichment/` (excluido de Git). `--refresh` vuelve a consultar padrones y sesiones. El workflow de actualización regenera `site/data/monitor.json` después de recolectar expedientes. La actualización mensual también regenera `proyectos.json` y `resumen.json` mediante `summarize.py --current`. `cobertura.json` y `controles.json` conservan la evidencia de la carga histórica; no se presentan como verificaciones nuevas.
 
 ### Publicación
 
@@ -85,13 +85,24 @@ Repositorio: [visualizando/legisCABA](https://github.com/visualizando/legisCABA)
 
 ### Recolección programada
 
-El workflow corre a las 09:30 UTC (06:30 en Buenos Aires) y admite ejecución manual con años específicos. Por defecto refresca todo el ciclo desde el 10/12/2023, incluidos expedientes antiguos y archivados, para detectar cambios de estado. Los resultados se guardan en commits. Requiere permiso de escritura para Actions y una rama que acepte esos commits. Los cron necesitan el workflow en la rama predeterminada y pueden demorarse.
+Un único workflow, `.github/workflows/actualizar.yml`, corre el **día 2 de cada mes a las 09:30 UTC (06:30 en Buenos Aires)**, después de la fecha programada de actualización del CSV externo de sesiones. También admite ejecución manual, siempre sobre la rama predeterminada. Sustituye las anteriores tareas diaria y semanal.
 
-El micrositio consume `site/data/monitor.json`; SQLite queda disponible para análisis, sin servidor de base de datos. Los snapshots comprimidos se descomprimen al iniciar la actualización; el bot vuelve a comprimirlos antes de guardar el commit.
+```sh
+python tools/package_data.py unpack
+python tools/update_data.py
+```
+
+El pipeline actualiza expedientes, exportaciones de proyectos y resumen, padrones y bloques, asuntos de sesiones, votaciones, comisiones y respaldo de sesiones. Conserva las bases y exportaciones comprimidas en Git. Solo comprime y guarda un commit después de completar todos los pasos; un error en Actions impide publicar una actualización parcial. En ejecución local los archivos descomprimidos de pasos completos pueden haber cambiado antes de una falla; para repetir desde el snapshot versionado, ejecutar nuevamente `unpack`.
+
+Cada recolector retoma desde su último rango completado, con **siete días de solapamiento**. Si se saltea un mes, recupera todo el período pendiente, aunque cruce de año. Los meses vacíos también avanzan la marca. No se borra el histórico ante ausencia en una respuesta. Las marcas están en los snapshots persistentes, sin depender de Actions Cache. Más detalles y comandos de recuperación en [operación mensual](docs/actualizacion-mensual.md).
+
+**Límite del modo incremental:** no detecta cambios de estado de expedientes antiguos ni correcciones o publicaciones tardías anteriores al solapamiento. Se conservan sus últimos datos observados; una revisión histórica se ejecuta expresamente. El atlas temático y el archivo de referencia del oficialómetro son snapshots metodológicos y quedan fuera de la actualización automática. Los PDFs locales en `data/DDJJ/` todavía no tienen recolector ni dataset integrado.
+
+Requiere permiso de escritura para Actions y una rama que acepte los commits del bot. Los cron necesitan el workflow en la rama predeterminada y pueden demorarse. Pages publica después de una actualización exitosa y usa el último commit de esa rama. Ver [eventos de GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows).
 
 ## Evidencia y límites
 
-Las pruebas por autor y por fecha están en [experiments/RESULTADOS.md](experiments/RESULTADOS.md). Se verificó un rango de dos días contra la unión de las consultas diarias; la combinación de fecha y año agotó el timeout. Ambos recolectores omiten ese filtro y validan las fechas devueltas. La primera carga del ciclo se completó; el esquema de refresco diario histórico sigue pendiente de ajustar.
+Las pruebas por autor y por fecha están en [experiments/RESULTADOS.md](experiments/RESULTADOS.md). Se verificó un rango de dos días contra la unión de las consultas diarias; la combinación de fecha y año agotó el timeout. Ambos recolectores omiten ese filtro y validan las fechas devueltas. La primera carga del ciclo se completó; la actualización programada ahora consulta solamente el período pendiente y el solapamiento reciente.
 
 Servicio descubierto en el [JavaScript oficial](https://parlamentaria.legislatura.gob.ar/pages/ExpedienteBusqueda.js), conservado con el HTML en `docs/api/`. No es una API documentada ni hay garantía de estabilidad.
 
@@ -107,7 +118,7 @@ La leyenda usa los seis espacios políticos definidos. Transformación y bloques
 
 ### Criterios gráficos
 
-La sección **Proyectos** incorpora el atlas temático experimental (`#proyectos`) y conserva el listado con sus filtros (`#proyectos/listado`). El atlas es un snapshot semántico al 14/10/2026, cargado solo al abrir esa vista; no se actualiza automáticamente con el scrapeo diario. Ver [método, límites y reproducción del atlas](docs/atlas-tematico.md). Su módulo y CSS se integran en la página y reutilizan los controles del sitio; no se necesita un runtime de modelos en producción.
+La sección **Proyectos** incorpora el atlas temático experimental (`#proyectos`) y conserva el listado con sus filtros (`#proyectos/listado`). El atlas es un snapshot semántico al 14/10/2026, cargado solo al abrir esa vista; no se actualiza automáticamente con el pipeline mensual. Ver [método, límites y reproducción del atlas](docs/atlas-tematico.md). Su módulo y CSS se integran en la página y reutilizan los controles del sitio; no se necesita un runtime de modelos en producción.
 
 - Mantener cada título más cerca de sus propias barras que del siguiente grupo.
 - Ubicar los valores al final de sus barras o segmentos correspondientes.
@@ -115,7 +126,7 @@ La sección **Proyectos** incorpora el atlas temático experimental (`#proyectos
 
 ## Votaciones y oficialómetro
 
-`python votes.py` consulta votos nominales oficiales desde el **01/01/2016** hasta hoy. Recorre sesiones en ventanas anuales (`GetSesionesAvanzado`), asuntos nominales (`GetVotacionesAsuntos`) y detalles por legislador (`GetVotaciones`). Se consulta todo el período cada semana para detectar publicaciones tardías y correcciones. Dos consultas concurrentes, pausa y reintentos; sin dependencias externas. `--until 2026-10-15` fija el corte. `--resume` reutiliza `data/vote-cache/` para retomar una carga interrumpida: **no usar para refrescar**. El workflow siempre vuelve a consultar la fuente.
+`python votes.py` consulta votos nominales oficiales desde el **01/01/2016** hasta hoy. Recorre sesiones en ventanas anuales (`GetSesionesAvanzado`), asuntos nominales (`GetVotacionesAsuntos`) y detalles por legislador (`GetVotaciones`). La ejecución manual sin opciones revisa todo el período. El workflow mensual ejecuta `python votes.py --incremental` y consulta desde el último rango completo, con siete días de solapamiento. Dos consultas concurrentes, pausa y reintentos; sin dependencias externas. `--until 2026-10-15` fija el corte. `--resume` reutiliza `data/vote-cache/` para retomar una carga interrumpida: **no usar para refrescar**. El workflow consulta la fuente solo para el rango pendiente; reutiliza el histórico de SQLite, no la caché de respuestas.
 
 La base `data/votaciones.sqlite` contiene `votaciones`, `votos` (clave votación–legislador), `votacion_expedientes` y `proyectos` (tipo, categoría y sumario). `current` guarda la última respuesta, `observations` los contenidos distintos con fecha y hash y `runs` las cargas completas. Se conservan respuestas originales, incluyendo las repeticiones por expedientes acumulados, pero cada persona se cuenta una vez por ID de votación en `site/data/votaciones.json`. No se borran votaciones previas porque no aparezcan en una consulta posterior. Una descarga inválida o incompleta impide publicar la carga. Los detalles con totales inconsistentes se conservan y se excluyen del indicador.
 
@@ -137,8 +148,7 @@ Los filtros de año, tipos de proyecto y padrón actual funcionan en todo el per
 
 El gráfico muestra una sola medida a la vez: **coincidencia general** o **con disidencias**, seleccionable con un control segmentado. Año, tipos y padrón actual se aplican a la medida elegida. Las casillas comparten módulo y estilos con Análisis y ofrecen Ley, Informes, Declaraciones y Otros; Otros reúne otras resoluciones, otros asuntos y registros sin categoría. Se incluye la unión de tipos sin duplicar votaciones y se conserva al menos una opción. La selección todas/con disidencias y la búsqueda del explorador afectan solo al listado. La metodología y el ranking quedan colapsados debajo del gráfico.
 
-`.github/workflows/votaciones.yml` actualiza **cada lunes a las 10:30 UTC (07:30 de Buenos Aires)** y permite ejecución manual. Conserva SQLite y JSON comprimidos; `publicar.yml` despliega Pages después de una actualización exitosa. Los recolectores comparten concurrencia para evitar escrituras simultáneas. El cron requiere el workflow en la rama predeterminada y puede demorarse.
-
+Las votaciones forman parte de `.github/workflows/actualizar.yml`, con una ejecución mensual compartida por todos los datasets. `publicar.yml` despliega Pages después de completar el pipeline. No queda un cron semanal independiente.
 ```sh
 python tools/package_data.py unpack
 python votes.py
@@ -158,7 +168,7 @@ Por defecto, Votaciones reúne “Bloques peronistas” y “Bloques de izquierd
 
 La sección `#sesiones` adapta en D3 local los gráficos del notebook de @rusosnith: calendario por fecha y tipo, acumulado anual exacto, evolución de totales y barras por año y tipo. Estas últimas unifican las dos versiones originales mediante **Total del año / Hasta el día y mes de cada año**, con el corte hasta hoy seleccionado por defecto. El tipo de sesión filtra todos los gráficos; un selector destaca un año. Hay tablas de datos y enlaces oficiales.
 
-La fuente sigue siendo el [CSV de ScrapperTown](https://github.com/rusosnith/ScrapperTown), generado por `scrape_sesiones.py` (distinto de `scraper_legiscaba.py`, que recolecta legisladores). Su workflow `scraper_sesiones.yml` está programado para el día 1 de cada mes a las 09:00 UTC (06:00 de Buenos Aires), con ejecución manual disponible. El modo automático conserva el histórico y consulta desde la última fecha guardada; no revisa correcciones ni publicaciones tardías de fechas anteriores. Configuración verificada el 06/11/2026. No se duplica el scraper: el navegador intenta leer el CSV directamente (timeout de 8 segundos) y usa `site/data/sesiones.json` si falla. La sección indica si usa respaldo, su fecha de captura y la última fecha de sesión, sin confundir esta última con una actualización. `python tools/sync_sessions.py` actualiza el respaldo de forma atómica y con validación; se ejecuta en el workflow diario existente. Un error impide reemplazar el archivo vigente.
+La fuente sigue siendo el [CSV de ScrapperTown](https://github.com/rusosnith/ScrapperTown), generado por `scrape_sesiones.py` (distinto de `scraper_legiscaba.py`, que recolecta legisladores). Su workflow `scraper_sesiones.yml` está programado para el día 1 de cada mes a las 09:00 UTC (06:00 de Buenos Aires), con ejecución manual disponible. El modo automático conserva el histórico y consulta desde la última fecha guardada; no revisa correcciones ni publicaciones tardías de fechas anteriores. Configuración verificada el 06/11/2026. No se duplica el scraper: el navegador intenta leer el CSV directamente (timeout de 8 segundos) y usa `site/data/sesiones.json` si falla. La sección indica si usa respaldo, su fecha de captura y la última fecha de sesión, sin confundir esta última con una actualización. `python tools/sync_sessions.py` actualiza el respaldo de forma atómica y con validación; se ejecuta en el workflow mensual. El CSV completo se descarga porque la fuente no ofrece deltas; se fusiona por ID con el respaldo existente, conservando sesiones históricas omitidas por la fuente y aceptando correcciones explícitas. No vuelve a scrapear esas sesiones. Un error impide reemplazar el archivo vigente.
 
 Se deduplica por ID y se agrupa por año calendario. Las fechas se comparan como ISO y se ubican sobre un calendario bisiesto común para evitar desplazamientos por zona horaria o por años bisiestos. Hasta hoy incluye el mismo día y mes de cada año (29/2 solo cuando existe). Se excluyen fechas futuras; se conservan años con cero sesiones en el filtro seleccionado. Los acumulados son escalones exactos, sin bins ni suavizado. La curva de totales usa interpolación monótona y se colorea en amarillo desde 2008 para señalar los gobiernos del PRO; los puntos conservan los totales exactos. Los tipos usan la paleta predeterminada Observable10 y su dominio alfabético, como en el notebook. El acumulado mantiene escalones exactos, con referencia visible de grises de claro a oscuro según año y rojo destacado de mayor grosor, y muestra el año al margen derecho al recorrer una línea o enfocarla con teclado. No se muestran los desplegables de acumulados mensuales ni de cantidades por tipo; estas últimas conservan su tabla accesible. La cobertura y los años inicial/actual pueden ser parciales.
 

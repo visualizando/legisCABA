@@ -1,5 +1,6 @@
 """Agenda oficial -> historial SQLite y exportación estática de comisiones."""
 import argparse
+from contextlib import closing
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 import hashlib
@@ -11,6 +12,7 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from incremental import pending_start
 
 BASE = 'https://parlamentaria.legislatura.gob.ar/webservices/Json.asmx/'
 BA = timezone(timedelta(hours=-3))
@@ -142,11 +144,22 @@ def main():
     parser.add_argument('--from-date', type=date.fromisoformat)
     parser.add_argument('--to-date', type=date.fromisoformat, default=today + timedelta(days=60))
     parser.add_argument('--refresh', action='store_true', help='Ignorar caché de respuestas originales')
+    parser.add_argument('--incremental', action='store_true', help='Retomar desde la última consulta completada')
+    parser.add_argument('--overlap-days', type=int, default=7)
     parser.add_argument('--database', type=Path, default=Path('data/comisiones.sqlite'))
     parser.add_argument('--output', type=Path, default=Path('site/data/comisiones.json'))
     parser.add_argument('--cache', type=Path, default=Path('data/commission-cache'))
     args = parser.parse_args()
+    if args.overlap_days < 0 or (args.incremental and args.from_date):
+        parser.error('Solapamiento inválido o modos incompatibles')
     start = args.from_date or (today - timedelta(days=90) if args.database.exists() else date(2023, 12, 10))
+    if args.incremental:
+        completed = None
+        if args.database.exists():
+            with closing(connect(args.database)) as previous:
+                completed = previous.execute('SELECT MAX(MIN(substr(observado,1,10), hasta)) FROM consultas').fetchone()[0]
+        start = pending_start(completed, '2023-12-10', args.overlap_days)
+        args.refresh = True
     if start > args.to_date:
         parser.error('El inicio debe ser anterior al fin')
     events, agendas = {}, {}

@@ -10,7 +10,7 @@ URL = 'https://raw.githubusercontent.com/rusosnith/ScrapperTown/refs/heads/main/
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def snapshot(content):
+def snapshot(content, previous=None):
     records = list(csv.DictReader(io.StringIO(content.decode('utf-8-sig'), newline='')))
     if not records:
         raise ValueError('CSV vacío')
@@ -22,13 +22,19 @@ def snapshot(content):
         if row['id_sesion_lp'] in seen and seen[row['id_sesion_lp']] != row:
             raise ValueError('ID contradictorio')
         seen[row['id_sesion_lp']] = row
-    return {'source': URL, 'captured_at': dt.datetime.now(dt.timezone.utc).isoformat(), 'rows': list(seen.values())}
+    # Upstream provides a complete CSV rather than a delta endpoint. Merge by ID
+    # so a temporarily omitted historical row cannot erase our local history.
+    merged = {r['id_sesion_lp']: r for r in (previous or {}).get('rows', [])}
+    merged.update(seen)
+    return {'source': URL, 'captured_at': dt.datetime.now(dt.timezone.utc).isoformat(),
+            'rows': sorted(merged.values(), key=lambda r: (r['fecha'], r['id_sesion_lp']))}
 
 
 if __name__ == '__main__':
-    with urlopen(URL, timeout=45) as response:
-        data = snapshot(response.read())
     target = ROOT / 'site/data/sesiones.json'
+    previous = json.loads(target.read_text(encoding='utf-8')) if target.exists() else None
+    with urlopen(URL, timeout=45) as response:
+        data = snapshot(response.read(), previous)
     temp = target.with_suffix('.tmp')
     temp.write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     temp.replace(target)

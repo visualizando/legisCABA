@@ -12,3 +12,6 @@ site/data/monitor.json
 data/votaciones.sqlite
 site/data/votaciones.json
 data/vote-cache/
+data/commission-cache/
+data/comisiones.sqlite
+site/data/comisiones.json

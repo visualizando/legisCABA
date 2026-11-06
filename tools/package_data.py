@@ -4,7 +4,8 @@ import gzip
 from pathlib import Path
 
 FILES=['data/expedientes.json','data/legiscaba.sqlite','site/data/monitor.json',
-       'data/votaciones.sqlite','site/data/votaciones.json']
+       'data/votaciones.sqlite','site/data/votaciones.json',
+       'data/comisiones.sqlite','site/data/comisiones.json']
 
 
 def main():

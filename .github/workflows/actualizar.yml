@@ -40,7 +40,9 @@ jobs:
       - name: Regenerar datos del micrositio
         run: |
           python prepare_site.py --refresh
+          python commissions.py --refresh
           node --test tests/model.test.mjs
+          node --test tests/commissions.test.mjs
           python tools/package_data.py pack
       - name: Guardar datos
         run: |

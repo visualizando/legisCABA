@@ -33,6 +33,22 @@ Se completó el rango **10/12/2023–14/10/2026**: 10.425 expedientes, incluidos
 
 ## Micrositio HTML + D3
 
+### Comisiones y próximas reuniones
+
+La sección `#comisiones` muestra convocatorias por comisión y por mes, con filtros de año, tipo (diputados/asesores) y comisión. Incluye un historial desplegable con enlaces al temario oficial. La portada y la sección incorporan una mini agenda de próximas reuniones, calculada con la hora de Buenos Aires. Si la fuente no publica próximas fechas, se muestra ese estado; una captura de más de dos días lleva aviso.
+
+```sh
+python tools/package_data.py unpack
+python commissions.py --refresh
+python commissions.py --from-date 2023-12-10 --refresh
+```
+
+La primera carga consulta desde el 10/12/2023; con una base existente, la actualización por defecto vuelve a consultar los últimos 90 días y los próximos 60. La segunda variante refresca todo el ciclo. El workflow diario de datos ejecuta el recolector y conserva `data/comisiones.sqlite.gz` y `site/data/comisiones.json.gz`; Pages los descomprime antes de publicar. `data/commission-cache/` conserva respuestas XML originales para retomar la carga inicial; `--refresh` evita reutilizar esa caché.
+
+SQLite conserva el último contenido, versiones consecutivas distintas (incluso si un cambio se revierte), observaciones de presencia por consulta y rangos consultados. Solo se guarda una ejecución después de completar sus consultas. Las reuniones que dejan de aparecer permanecen en la base, marcadas como ausentes en el rango actualizado, sin calificarlas como canceladas.
+
+La primera carga recuperó 3.326 actividades de 546 agendas. Las estadísticas seleccionan diputados/asesores con comisión identificada, más comisiones especiales y Labor Parlamentaria reconocidas por el nombre publicado del originador. Las reuniones conjuntas se atribuyen a la comisión principal. Son **convocatorias publicadas**, no evidencia de realización, asistencia ni dictamen. El historial de cambios empieza con la captura del 6/11/2026. Ver [fuentes y metodología](docs/api/reuniones-comisiones.md).
+
 La carpeta `site/` es el sitio completo, sin compilación, backend ni dependencias CDN. Incluye D3 7.9.0 local, estilos, módulos JavaScript y una exportación compacta de datos (~7 MB). Los snapshots se versionan comprimidos; Pages los descomprime al publicar.
 
 ```sh

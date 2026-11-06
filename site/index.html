@@ -30,8 +30,9 @@
   <link rel="stylesheet" href="assets/atlas.css?v=20261016-navigation">
   <link rel="stylesheet" href="assets/landing.css?v=20261106-seis">
   <link rel="stylesheet" href="assets/loading.css?v=20261106">
+  <link rel="stylesheet" href="assets/commissions.css?v=20261106-compact">
   <script defer src="assets/vendor/d3.v7.min.js"></script>
-  <script type="module" src="assets/app.mjs?v=20261106-loading"></script>
+  <script type="module" src="assets/app.mjs?v=20261106-comisiones-compact"></script>
 </head>
 <body>
 <a class="skip" href="#contenido">Saltar al contenido</a>
@@ -40,7 +41,7 @@
   <div class="masthead-note">Monitoreo de la legislatura<br><span>de la Ciudad de Buenos Aires</span></div>
   <span class="edition">Ciclo iniciado el 10.12.2023</span>
 </header>
-<div class="navline"><nav class="wrap" aria-label="Secciones"><a href="#inicio" aria-current="page">Inicio</a><a href="#panorama">Panorama</a><a href="#legisladores">Legisladores</a><a href="#proyectos">Proyectos</a><a href="#red">Red de legisladores</a><a href="#votaciones">Oficialómetro</a><a href="#metodologia">Metodología</a></nav></div>
+<div class="navline"><nav class="wrap" aria-label="Secciones"><a href="#inicio" aria-current="page">Inicio</a><a href="#panorama">Panorama</a><a href="#legisladores">Legisladores</a><a href="#proyectos">Proyectos</a><a href="#red">Red de legisladores</a><a href="#votaciones">Oficialómetro</a><a href="#comisiones">Comisiones</a><a href="#metodologia">Metodología</a></nav></div>
 <main id="contenido" class="wrap" tabindex="-1">
   <section id="view-inicio" class="view landing" aria-labelledby="landing-title">
     <header class="landing-intro">
@@ -73,6 +74,7 @@
         <div class="landing-feature-body"><h2>Buscador de proyectos</h2><p>Expedientes, autores y estados.</p></div>
       </a>
     </div>
+    <section id="home-agenda" class="commission-mini" aria-label="Próximas reuniones de comisiones"></section>
     <p class="landing-method">Datos públicos de la Legislatura porteña. <a href="#metodologia">Cómo leer los datos</a></p>
   </section>
   <div id="load-state" class="loading" hidden></div>
@@ -124,6 +126,8 @@
       <p class="note">Arrastrá los círculos para explorar la red. Cada uno representa un legislador. Las líneas conectan proyectos compartidos. El color indica el espacio político. Los grupos sin vínculos con la red principal se muestran aparte, según los filtros elegidos.</p><div class="network-layout"><div class="network-canvas"><div class="network-graph-tools"><button type="button" id="network-reset" class="quiet">Centrar red ↺</button><div class="zoom-buttons"><button type="button" id="zoom-in" aria-label="Acercar red">+</button><button type="button" id="zoom-out" aria-label="Alejar red">−</button></div></div><div id="network-stats" class="network-stats"></div><svg id="network" aria-label="Red de proyectos compartidos; seleccionar un nodo para explorar sus conexiones"></svg><div id="network-legend" class="legend"></div></div><aside class="network-detail" id="network-detail" aria-live="polite"></aside></div>
 
     </section>
+
+    <section id="view-comisiones" class="view" hidden></section>
 
     <section id="view-votaciones" class="view" hidden>
       <header class="votes-intro"><h2>El oficialómetro</h2><p>¿Cuánto coincide el voto de cada bloque con el bloque oficialista? <span>Idea original de <a href="https://decadavotada.andytow.com/oficialism-l.php" target="_blank" rel="noopener">Andy Tow ↗</a>.</span></p></header>
